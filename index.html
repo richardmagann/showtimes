@@ -251,7 +251,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
       <label for="age">Common Sense age, at most
         <select id="age"><option value="99">Any age</option><option value="6">6+</option><option value="8">8+</option><option value="10">10+</option><option value="12">12+</option><option value="13">13+</option></select></label>
       <label for="th">Theaters
-        <select id="th"><option value="all">Favorites + nearby</option><option value="fav">Favorites only</option><option value="10">Within 10 miles</option></select></label>
+        <select id="th"><option value="all">Favorites + nearby</option><option value="fav">Favorites only</option><option value="10">Favorites + within 10 miles</option></select></label>
       <label for="after">Starts at or after
         <select id="after"><option value="0">Any time</option><option value="12">Noon</option><option value="16">4 PM</option><option value="18">6 PM</option></select></label>
       <label class="check" for="osc"><input type="checkbox" id="osc"> Oscar-nominated only</label>
@@ -380,7 +380,7 @@ function movieOK(m, specialsMode){
   if(S.age<99 && m.csm!=null && m.csm>S.age) return false;
   return true;
 }
-function theaterOK(id){const t=DATA.theaters[id]; if(S.th==="fav") return t.rank!=null; if(S.th==="10") return t.mi<=10; return true;}
+function theaterOK(id){const t=DATA.theaters[id]; if(S.th==="fav") return t.rank!=null; if(S.th==="10") return t.rank!=null || t.mi<=10; /* ranked favorites always count, however far */ return true;}
 
 function remainingCount(day){
   const today=todayStr(), now=new Date(), nowMin=now.getHours()*60+now.getMinutes();
@@ -400,7 +400,7 @@ function filterSummary(){
   if(S.mode==="show") parts.push(S.view==="theater"?"By theater":"By movie");
   if(S.mc) parts.push("Meta "+S.mc+"+");
   if(S.age<99) parts.push("Ages ≤"+S.age);
-  if(S.th!=="all") parts.push(S.th==="fav"?"Favorites only":"≤10 mi");
+  if(S.th!=="all") parts.push(S.th==="fav"?"Favorites only":"Favorites + ≤10 mi");
   if(S.after) parts.push("After "+fmt(S.after*60));
   if(S.osc) parts.push("Oscar only");
   return parts.join(" · ");
