@@ -175,6 +175,7 @@ h1 b{font-weight:800}
 .tour-nav button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 14px;font-weight:700;cursor:pointer}
 .tour-nav button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .tour-block{position:fixed;inset:0;z-index:49}
+.tour-cta{margin-top:10px;border:1px solid var(--accent);background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:7px 14px;font-weight:700;cursor:pointer}
 
 /* Request form */
 .modal-bg{position:fixed;inset:0;z-index:60;background:rgba(10,8,12,.6);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 16px}
@@ -260,12 +261,11 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 
 <div class="addcity"><div><b>Want this for your city?</b><span>Pick your favorite theaters and get your own family page.</span></div><button class="done" id="reqbtn2">Request your city</button></div>
 <div class="foot">
-  <div><strong>Sources.</strong> Showtimes and Fandango ratings from <a href="https://www.fandango.com/73120_movietimes">Fandango</a>. Metascores from <a href="https://www.metacritic.com">Metacritic</a> and age ratings from <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Credits from Wikipedia film articles.</div>
-  <div><strong>Not verified live.</strong> Oscar notes and the MPAA ratings of re-released classics (where Fandango lists a different rating) come from Claude's training knowledge, as do the Hotel Transylvania credits.</div>
-  <div><strong>The last two days</strong> in the strip are often partial; theaters post Thursday and Friday schedules midweek.</div>
-  <div><strong>Coming up</strong> combines Fandango's advance listings, Flix Brewhouse's event pages, and the Rodeo Cinema, OKCMOA, Fathom and Met Opera calendars.</div>
-  <div><strong>End time</strong> is showtime + runtime + 20 minutes of trailers. An estimate; chains vary.</div>
+  <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Coming up also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
+  <div><strong>Times.</strong> End times are the start plus the movie's runtime plus about 20 minutes of trailers, rounded to 5 minutes. Theaters vary, so treat them as estimates.</div>
   <div><strong>Distances</strong> are straight-line miles from home, not driving miles.</div>
+  <div><strong>Oscar notes</strong> and a few classic re-release ratings were added by hand and may be incomplete. Always check the rating with the theater before you buy.</div>
+  <div><strong>Your filters</strong> are saved on this device only.</div>
 </div>
 </div>
 
@@ -509,11 +509,11 @@ function filmBlock(mid, groups){
 /* ---------- First-visit tour ---------- */
 const TOUR=[
   {sel:".tabs", title:"Three ways to look", text:"Showtimes is one day at a time. Specials pulls together one-off and classic screenings for the whole week. Coming up looks months ahead."},
-  {sel:"#days", title:"Pick a day", text:"Swipe for more days. Days that have passed drop off, and if tonight's showings are over it opens on tomorrow."},
+  {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
   {sel:".filterline", title:"Filters", text:"Ratings, animated or live action, minimum Metacritic, Common Sense ages, theaters and start time. Your choices are remembered on this device."},
   {sel:"#out .film", title:"Reading a movie", text:"Green Metacritic means 70 or higher. Ages is Common Sense Media's age guide. Each time shows about when the movie ends, including trailers. Tap a title to see every showtime for just that movie."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
-  {sel:"#tourbtn", title:"That's it", text:"Tap ? any time to see this again. Enjoy the show."}
+  {sel:"#tourbtn", title:"Want this for your city?", text:"Any family can get their own page with their theaters. Tap ? any time to see this tour again.", cta:true}
 ];
 let tourEls=null, tourI=0;
 function tourKey(){ return "mfs-tour-v1"; }
@@ -533,7 +533,7 @@ function showTourStep(i){
   const inBar=el.closest(".bar")||el.closest("header");
   if(!inBar){ el.scrollIntoView({block:"center"}); } else { window.scrollTo({top:0}); }
   const card=tourEls[1];
-  card.innerHTML=`<h3>${st.title}</h3><p>${st.text}</p><div class="tour-nav"><span class="dots">${tourI+1} of ${steps.length}</span><span class="btns">${tourI<steps.length-1?`<button type="button" data-t="skip">Skip</button>`:""}${tourI>0?`<button type="button" data-t="back">Back</button>`:""}<button type="button" class="primary" data-t="next">${tourI<steps.length-1?"Next":"Done"}</button></span></div>`;
+  card.innerHTML=`<h3>${st.title}</h3><p>${st.text}</p>${st.cta?`<button type="button" class="tour-cta" data-t="req">Request your city</button>`:""}<div class="tour-nav"><span class="dots">${tourI+1} of ${steps.length}</span><span class="btns">${tourI<steps.length-1?`<button type="button" data-t="skip">Skip</button>`:""}${tourI>0?`<button type="button" data-t="back">Back</button>`:""}<button type="button" class="primary" data-t="next">${tourI<steps.length-1?"Next":"Done"}</button></span></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(placeTour));
   card.querySelector('[data-t="next"]').focus({preventScroll:true});
 }
@@ -545,6 +545,7 @@ function startTour(){
   const ring=document.createElement("div"); ring.className="tour-ring";
   const card=document.createElement("div"); card.className="tour-card"; card.setAttribute("role","dialog"); card.setAttribute("aria-label","How this works");
   card.addEventListener("click",e=>{const b=e.target.closest("[data-t]"); if(!b) return; const steps=tourSteps();
+    if(b.dataset.t==="req"){ endTour(); openReq(); return; }
     if(b.dataset.t==="skip") endTour(); else if(b.dataset.t==="back") showTourStep(tourI-1); else if(tourI>=steps.length-1) endTour(); else showTourStep(tourI+1);});
   document.addEventListener("keydown",function k(e){ if(!tourEls){document.removeEventListener("keydown",k);return;} if(e.key==="Escape") endTour(); });
   document.body.append(block,ring,card); tourEls=[ring,card,block];
