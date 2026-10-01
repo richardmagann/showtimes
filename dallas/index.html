@@ -69,7 +69,8 @@ button.fbtn[aria-expanded="true"]{background:var(--fg);color:var(--bg);border-co
 .fsum{font-size:.82rem;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Filter panel */
-.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;display:grid;gap:12px;max-height:62vh;overflow:auto}
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 12px 0;display:grid;gap:12px;max-height:62vh;max-height:calc(100dvh - 210px);overflow:auto;overscroll-behavior:contain}
+.panel .pfoot{position:sticky;bottom:0;background:var(--surface);padding:10px 0 12px;border-top:1px solid var(--line);display:flex;justify-content:flex-end}
 .panel h4{margin:0 0 6px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 button.pill{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 13px;font-weight:600;font-size:.88rem;cursor:pointer}
@@ -137,6 +138,7 @@ details.cred summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-we
 .credits b{font-weight:600;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
 .note{font-size:.85rem;color:var(--muted);font-style:italic}
 .links{font-size:.85rem;display:flex;flex-wrap:wrap;gap:12px}
+.credits a,.links a{display:inline-block;padding-block:6px}
 .empty{padding:28px 0;color:var(--muted)}
 
 /* Coming up */
@@ -157,6 +159,7 @@ details.cred summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-we
 .evwhere .nm small{color:var(--muted);font-size:.78rem}
 .evwhere .tm{font-family:var(--mono);font-size:.88rem;text-align:right;font-variant-numeric:tabular-nums}
 .evwhere .na{grid-column:1/-1;color:var(--muted);font-style:italic}
+@media (max-width:480px){.evwhere{grid-template-columns:1fr;gap:0}.evwhere .tm{text-align:left;margin-bottom:6px}}
 a.evt{color:inherit;text-decoration:none}
 a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .calnote{font-size:.85rem;color:var(--muted);margin-top:12px;max-width:68ch}
@@ -268,15 +271,15 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="foot">
   <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Coming up also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
   <div><strong>Times.</strong> End times are the start plus the movie's runtime plus about 20 minutes of trailers, rounded to 5 minutes. Theaters vary, so treat them as estimates.</div>
-  <div><strong>Distances</strong> are straight-line miles from home, not driving miles.</div>
+  <div><strong>Distances</strong> are straight-line miles from home, rounded to the nearest mile, not driving miles.</div>
   <div><strong>Oscar notes</strong> and a few classic re-release ratings were added by hand and may be incomplete. Always check the rating with the theater before you buy.</div>
   <div><strong>Your filters</strong> are saved on this device only.</div>
 </div>
 </div>
 
 <div class="modal-bg" id="reqmodal" hidden>
-  <form class="modal" id="reqform" novalidate>
-    <h2>Request your city</h2>
+  <form class="modal" id="reqform" novalidate role="dialog" aria-modal="true" aria-labelledby="rq-title">
+    <h2 id="rq-title">Request your city</h2>
     <p class="lead">Give us your zip and we'll set up your own page and send you the link.</p>
     <div class="preview" aria-live="polite"><b id="pvfam">Your</b> Family <span>Showtimes</span></div>
     <label for="rq-fam">Family last name <small>Shown at the top of your page</small><input id="rq-fam" maxlength="40" required autocomplete="family-name"></label>
@@ -333,7 +336,11 @@ async function fetchData(){
   const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,defaultRatings:city[0]?.default_ratings||["G","PG"],cityName:city[0]?.name||null};
   for(const r of ct){const t=r.theaters; D.theaters[t.id]={name:t.name,short:t.short_name,rank:r.rank,mi:Number(r.miles),indie:t.is_indie};}
   for(const m of movies) D.movies[m.id]={t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors,wr:m.writers,st:m.stars,fd:m.fandango_url};
-  for(const s of shows) if(D.movies[s.movie_id]) D.shows.push([s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]);
+  // Fandango sometimes lists one showing under two formats (e.g. standard and Premium); keep one, with the format.
+  const seenShow=new Map();
+  for(const s of shows){ if(!D.movies[s.movie_id]) continue; const k=s.theater_id+"|"+s.show_date+"|"+s.movie_id+"|"+s.start_time.slice(0,5); const prev=seenShow.get(k);
+    if(prev){ if(!prev[3] && s.format) prev[3]=s.format; continue; }
+    const row=[s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]; seenShow.set(k,row); D.shows.push(row); }
   for(const e of events) D.calendar.push({d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times});
   return D;
 }
@@ -352,7 +359,10 @@ function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth
 function fmt(mins){ mins=((mins%1440)+1440)%1440; let h=Math.floor(mins/60), m=mins%60; const ap=h>=12?"p":"a"; h=h%12||12; return h+":"+pad(m)+ap; }
 const toMin=t=>{const [h,m]=t.split(":").map(Number);return h*60+m;};
 function dayLabel(d){const x=new Date(d+"T12:00:00");return {w:x.toLocaleDateString("en-US",{weekday:"short"}),md:(x.getMonth()+1)+"/"+x.getDate(),long:x.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})};}
-function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+// Links come from the database; only allow ordinary web links, escaped for use in an attribute.
+function url(u){return /^https?:\/\//i.test(String(u||""))?esc(u):"#";}
+const THIS_YEAR=new Date().getFullYear();
 const byScore=(a,b)=>(DATA.movies[b].mc??-1)-(DATA.movies[a].mc??-1);
 
 function pills(el, items, isOn, onTap, cls="pill"){
@@ -442,7 +452,7 @@ function renderShows(){
   if(spm.length){
     html+=`<div class="strip"><h3>★ Special showings ${S.day===today?"today":"on "+dayLabel(S.day).w}</h3><div class="scroll">`+
       spm.map(id=>{const m=DATA.movies[id]; const r=rows.filter(x=>x.m===id); const th=[...new Set(r.map(x=>DATA.theaters[x.th].short))]; const first=r.map(x=>toMin(x.t)).sort((a,b)=>a-b)[0];
-        return `<button class="spcard" data-focus="${id}"><b>${esc(m.t)}</b><small>${esc(m.sp)} · ${m.r}</small><small>${th.length>1?th.length+" theaters":esc(th[0])} · from ${fmt(first)}</small></button>`;}).join("")+`</div></div>`;
+        return `<button class="spcard" data-focus="${id}"><b>${esc(m.t)}</b><small>${esc(m.sp)} · ${esc(m.r)}</small><small>${th.length>1?th.length+" theaters":esc(th[0])} · from ${fmt(first)}</small></button>`;}).join("")+`</div></div>`;
   }
   if(S.view==="theater"){
     for(const tid of FAV_ORDER){
@@ -479,7 +489,7 @@ function renderCal(){
     if(mon!==curM){ if(curM) html+="</section>"; html+=`<section class="month"><h2>${mon}</h2>`; curM=mon; curD=""; }
     if(e.d!==curD){ html+=`<div class="dayhd">${x.toLocaleDateString("en-US",{weekday:"long"})} <small>${x.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></div>`; curD=e.d; }
     const rows = e.th.length ? e.th.slice().sort((a,b)=>order(a[0])-order(b[0])).map(([tid,ts])=>{const th=DATA.theaters[tid]; return `<span class="nm">${esc(th?th.short:tid)}${th?` <small>${th.mi} mi</small>`:""}</span><span class="tm">${ts.map(s=>fmt(toMin(s))).join("  ")||"see link"}</span>`;}).join("") : `<span class="na">${esc(e.where||"")}</span>`;
-    html+=`<div class="ev"><h3><a class="evt" href="${e.src}" target="_blank" rel="noopener">${esc(e.t)}</a>${e.y?` <span class="yr">(${e.y})</span>`:""}</h3>
+    html+=`<div class="ev"><h3><a class="evt" href="${url(e.src)}" target="_blank" rel="noopener">${esc(e.t)}</a>${e.y&&e.y<THIS_YEAR?` <span class="yr">(${esc(e.y)})</span>`:""}</h3>
       <div class="meta2"><span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}</div><div class="evwhere">${rows}</div></div>`;
   }
   if(curM) html+="</section>";
@@ -488,15 +498,15 @@ function renderCal(){
 }
 
 function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
-function people(list){return list.map(([n,u])=>u?`<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
+function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
 function filmBlock(mid, groups){
   const m=DATA.movies[mid];
-  const facts=[m.r + (m.fr && m.fr!==m.r ? ` (Fandango: ${m.fr})`:""), m.rt?`${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m`:"runtime TBA", m.anim===true?"Animated":m.anim===false?"Live action":null].filter(Boolean).join(" · ");
+  const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m`:"runtime TBA", m.anim===true?"Animated":m.anim===false?"Live action":null].filter(Boolean).join(" · ");
   const badges=m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"";
-  const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${m.mcS}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">–<small>Metacritic</small></span>`;
-  const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${m.csmS}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">–<small>Ages</small></span>`;
+  const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">–<small>Metacritic</small></span>`;
+  const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">–<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
-    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>ends ~${fmt(Math.round((s+m.rt+20)/5)*5)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${r.fmt}</em>`:""}</span>`;}).join("");
+    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>ends ~${fmt(Math.round((s+m.rt+20)/5)*5)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${esc(r.fmt)}</em>`:""}</span>`;}).join("");
     return `<div class="tline">${tid?`<span class="where">${esc(DATA.theaters[tid].short)} <small>${DATA.theaters[tid].mi} mi</small></span>`:""}${chips}</div>`;
   }).join("");
   const hasCred=m.dir.length||m.wr.length||m.st.length;
@@ -504,10 +514,10 @@ function filmBlock(mid, groups){
      ${m.dir.length?`<div><b>Director</b>${people(m.dir)}</div>`:""}
      ${m.wr.length?`<div><b>Writers</b>${people(m.wr)}</div>`:""}
      ${m.st.length?`<div><b>Starring</b>${people(m.st)}</div>`:""}
-     <div class="links">${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${m.fd}" target="_blank" rel="noopener">Tickets on Fandango</a></div></div></details>`
-     : `<div class="links"><a href="${m.fd}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
+     <div class="links">${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div></div></details>`
+     : `<div class="links"><a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
   const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
-  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<2026?` <span class="yr">(${m.y})</span>`:""}</h3><div class="facts">${facts}</div>${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
@@ -560,13 +570,23 @@ function startTour(){
 function maybeTour(){ let seen=false; try{seen=localStorage.getItem(tourKey())==="1";}catch(e){} if(!seen) setTimeout(startTour,400); }
 
 /* ---------- Request your city ---------- */
-function openReq(){ $("reqmodal").hidden=false; $("rq-err").textContent=""; setTimeout(()=>$("rq-fam").focus(),30); }
-function closeReq(){ $("reqmodal").hidden=true; }
+let reqOpener=null;
+function openReq(){ reqOpener=document.activeElement; $("reqmodal").hidden=false; $("rq-err").textContent=""; setTimeout(()=>$("rq-fam").focus(),30); }
+function closeReq(){ $("reqmodal").hidden=true; if(reqOpener && reqOpener.focus) reqOpener.focus(); }
 function setupReq(){
   $("reqbtn2").onclick=openReq;
   $("rq-cancel").onclick=closeReq;
   $("reqmodal").addEventListener("click",e=>{ if(e.target===$("reqmodal")) closeReq(); });
-  document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("reqmodal").hidden) closeReq(); });
+  document.addEventListener("keydown",e=>{
+    if($("reqmodal").hidden) return;
+    if(e.key==="Escape"){ closeReq(); return; }
+    if(e.key==="Tab"){ // keep keyboard focus inside the form while it's open
+      const f=[...$("reqform").querySelectorAll("input:not([type=hidden]):not([tabindex='-1']),textarea,select,button")].filter(x=>!x.disabled && x.offsetParent!==null);
+      if(!f.length) return; const first=f[0], last=f[f.length-1];
+      if(e.shiftKey && document.activeElement===first){ e.preventDefault(); last.focus(); }
+      else if(!e.shiftKey && document.activeElement===last){ e.preventDefault(); first.focus(); }
+    }
+  });
   let picks=[], found=[];
   const drawPicker=()=>{
     $("rq-plist").innerHTML=found.map(t=>{const i=picks.indexOf(t.id);return `<button type="button" class="pt" data-id="${esc(t.id)}" aria-pressed="${i>=0}"><span class="rk">${i>=0?i+1:""}</span><span><b>${esc(t.name)}</b><small>${esc(t.address||"")}</small></span><span class="mi">${t.miles!=null?t.miles+" mi":""}</span></button>`;}).join("");
