@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Magann Family Showtimes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: compact sticky bar (mode tabs + day strip + filter summary) over one reading column; filters live in a fold-out panel */
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{
+  --bg:#f6f5f2; --surface:#ffffff; --fg:#1d1c22; --muted:#6b6873; --line:#e2dfda;
+  --accent:#9e2b25; --accent-soft:#f6e6e3; --amber:#a35d0d; --chip:#efece7;
+  --good:#2f7a3d; --mid:#a8740c; --bad:#a3352d;
+  --ghibli-bg:#e3f0e6; --ghibli-fg:#2f6b3d; --fathom-bg:#efe7d6; --fathom-fg:#7a5410;
+  --display:"Big Shoulders Display", "Arial Narrow", Impact, sans-serif;
+  --body:"Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141317; --surface:#1d1c21; --fg:#ecebee; --muted:#a19ea8; --line:#2f2d34;
+  --accent:#e0675e; --accent-soft:#3a201e; --amber:#e3a04b; --chip:#28262c;
+  --good:#3f9a52; --mid:#c48f1f; --bad:#c2554b;
+  --ghibli-bg:#203a27; --ghibli-fg:#8fd3a0; --fathom-bg:#3a2f1a; --fathom-fg:#e6c27a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141317; --surface:#1d1c21; --fg:#ecebee; --muted:#a19ea8; --line:#2f2d34;
+  --accent:#e0675e; --accent-soft:#3a201e; --amber:#e3a04b; --chip:#28262c;
+  --good:#3f9a52; --mid:#c48f1f; --bad:#c2554b;
+  --ghibli-bg:#203a27; --ghibli-fg:#8fd3a0; --fathom-bg:#3a2f1a; --fathom-fg:#e6c27a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45;padding-inline:16px;padding-block:0 48px;margin:0}
+.wrap{max-width:860px;margin:0 auto}
+a{color:var(--accent)}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Header */
+header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:14px 6px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(1.3rem,6.2vw,1.7rem);white-space:nowrap;line-height:1;letter-spacing:.02em;text-transform:uppercase;margin:0}
+h1 span{color:var(--accent)}
+.fresh{font-size:.78rem;color:var(--muted)}
+
+/* Sticky bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--chip);border-radius:10px;padding:3px;gap:3px}
+.tabs button{border:0;background:transparent;color:var(--fg);font-weight:700;font-size:.92rem;padding:8px 4px;border-radius:8px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.tabs button[data-mode="spec"][aria-selected="true"]{color:var(--accent)}
+.tabs button[data-mode="cal"][aria-selected="true"]{color:var(--amber)}
+.row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.row::-webkit-scrollbar{display:none}
+button.day{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:5px 11px;text-align:center;cursor:pointer;line-height:1.1}
+button.day b{display:block;font-weight:700;font-size:.95rem}
+button.day small{font-size:.72rem;color:var(--muted)}
+button.day[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+button.day[aria-pressed="true"] small{color:var(--bg);opacity:.8}
+.filterline{display:flex;align-items:center;justify-content:space-between;gap:10px}
+button.fbtn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;font-weight:700;font-size:.85rem;cursor:pointer}
+button.fbtn[aria-expanded="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.fsum{font-size:.82rem;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Filter panel */
+.panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px;display:grid;gap:12px;max-height:62vh;overflow:auto}
+.panel h4{margin:0 0 6px;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+button.pill{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 13px;font-weight:600;font-size:.88rem;cursor:pointer}
+button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.pgrid label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+.pgrid select,.pgrid input[type=range]{width:100%;font:inherit;color:var(--fg)}
+.pgrid select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px}
+.check{display:flex!important;align-items:center;gap:8px;color:var(--fg)!important;font-size:.9rem!important}
+.pfoot{display:flex;justify-content:flex-end}
+button.done{border:0;background:var(--accent);color:#fff;border-radius:999px;padding:7px 18px;font-weight:700;cursor:pointer}
+
+/* Status lines */
+.focusbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;padding:10px 12px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;font-size:.9rem}
+.focusbar b{color:var(--accent)}
+.focusbar button{border:1px solid var(--accent);background:var(--surface);color:var(--accent);border-radius:999px;padding:5px 12px;font-weight:700;cursor:pointer}
+.count{font-size:.85rem;color:var(--muted);padding-top:10px}
+
+/* Specials strip */
+.strip{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--accent)}
+.strip h3{margin:0 0 8px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.strip .scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.strip .scroll::-webkit-scrollbar{display:none}
+button.spcard{flex:none;max-width:220px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer}
+button.spcard b{display:block;font-size:.9rem;line-height:1.25}
+button.spcard small{display:block;font-size:.75rem;color:var(--muted);margin-top:3px}
+
+/* Theater / day groups */
+section.group{margin-top:22px}
+.ghead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:5px}
+.ghead h2{font-weight:700;font-size:1.2rem;margin:0;line-height:1.2}
+.ghead .meta{font-size:.82rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.rank{display:inline-block;font-family:var(--mono);font-size:.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-right:8px;vertical-align:2px}
+
+/* Film card */
+.film{padding:14px 0;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.film.is-sp{background:var(--accent-soft);border-left:4px solid var(--accent);border-bottom-color:transparent;padding:12px 12px 14px;margin-block:10px;border-radius:0 10px 10px 0}
+.spflag{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-weight:800;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.spflag span{font-weight:600;font-size:.76rem;letter-spacing:0;text-transform:none;color:var(--fg);background:var(--surface);border:1px solid var(--accent);border-radius:999px;padding:1px 8px}
+.ftop{display:flex;gap:12px;align-items:flex-start}
+.ftitle{flex:1;min-width:0}
+.ftitle h3{margin:0;font-size:1.1rem;line-height:1.25;font-weight:700}
+.ftitle h3 .yr{font-weight:400;color:var(--muted)}
+button.ttl{all:unset;cursor:pointer;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+button.ttl:hover{color:var(--accent);text-decoration-color:var(--accent)}
+button.ttl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.facts{font-size:.85rem;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.badge{font-size:.8rem;font-weight:700;color:var(--amber)}
+.scores{display:flex;gap:6px;flex:none}
+.sc{display:grid;place-items:center;align-content:center;width:64px;height:50px;border-radius:8px;font-family:var(--mono);font-size:1.05rem;line-height:1.05;text-decoration:none;color:#fff}
+.sc small{font-family:var(--body);font-size:.62rem;font-weight:600;opacity:.95;margin-top:3px}
+.sc.g{background:var(--good)} .sc.m{background:var(--mid)} .sc.b{background:var(--bad)}
+.sc.na{background:var(--chip);color:var(--muted)}
+.sc.age{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
+.tline{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.where{flex-basis:100%;font-size:.85rem;font-weight:700;color:var(--fg);margin-top:2px}
+.where small{font-weight:400;color:var(--muted)}
+.t{font-family:var(--mono);font-size:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-variant-numeric:tabular-nums;color:var(--fg)}
+.t i{font-style:normal;font-family:var(--body);color:var(--muted);font-size:.75rem;margin-left:4px}
+.t em{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:700;color:var(--accent);margin-left:5px;text-transform:uppercase}
+.t.past{opacity:.38;text-decoration:line-through}
+details.cred summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600}
+.credits{font-size:.9rem;display:grid;gap:3px;padding-top:6px}
+.credits b{font-weight:600;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.note{font-size:.85rem;color:var(--muted);font-style:italic}
+.links{font-size:.85rem;display:flex;flex-wrap:wrap;gap:12px}
+.empty{padding:28px 0;color:var(--muted)}
+
+/* Coming up */
+.month{margin-top:24px}
+.month h2{font-family:var(--display);font-weight:800;font-size:1.6rem;text-transform:uppercase;letter-spacing:.02em;margin:0 0 4px}
+.dayhd{display:flex;align-items:baseline;gap:8px;margin-top:16px;padding:6px 10px;background:var(--fg);color:var(--bg);border-radius:8px;font-weight:700;font-size:.95rem}
+.dayhd small{font-weight:400;opacity:.75;font-size:.8rem}
+.ev{padding:12px 2px 14px;border-bottom:1px solid var(--line)}
+.ev h3{margin:0;font-size:1.08rem;line-height:1.3;font-weight:700}
+.ev h3 .yr{font-weight:400;color:var(--muted)}
+.meta2{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);margin-top:4px}
+.tag{font-size:.75rem;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.tag.ghibli{background:var(--ghibli-bg);color:var(--ghibli-fg)}
+.tag.fathom{background:var(--fathom-bg);color:var(--fathom-fg)}
+.tag.live{background:var(--chip);color:var(--muted)}
+.rate{font-weight:700;color:var(--fg);border:1px solid var(--line);border-radius:4px;padding:0 5px;font-size:.75rem}
+.evwhere{display:grid;grid-template-columns:1fr auto;gap:4px 12px;margin-top:8px;font-size:.92rem}
+.evwhere .nm small{color:var(--muted);font-size:.78rem}
+.evwhere .tm{font-family:var(--mono);font-size:.88rem;text-align:right;font-variant-numeric:tabular-nums}
+.evwhere .na{grid-column:1/-1;color:var(--muted);font-style:italic}
+a.evt{color:inherit;text-decoration:none}
+a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
+.calnote{font-size:.85rem;color:var(--muted);margin-top:12px;max-width:68ch}
+
+.foot{margin-top:36px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px;max-width:68ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="top">
+  <h1>Magann Family <span>Showtimes</span></h1>
+  <span class="fresh" id="fresh"></span>
+</header>
+
+<div class="bar">
+  <div class="tabs" role="tablist" aria-label="View">
+    <button role="tab" data-mode="show" id="tab-show">Showtimes</button>
+    <button role="tab" data-mode="spec" id="tab-spec">★ Specials</button>
+    <button role="tab" data-mode="cal" id="tab-cal">Coming up</button>
+  </div>
+  <div class="row" id="days" role="group" aria-label="Day"></div>
+  <div class="filterline">
+    <span class="fsum" id="fsum"></span>
+    <button class="fbtn" id="fbtn" aria-expanded="false" aria-controls="panel">Filters</button>
+  </div>
+  <div class="panel" id="panel" hidden>
+    <div><h4>Rating</h4><div class="chips" id="ratings"></div></div>
+    <div><h4>Type</h4><div class="chips" id="types"></div></div>
+    <div id="viewbox"><h4>Group by</h4><div class="chips" id="views"></div></div>
+    <div class="pgrid">
+      <label for="mc">Minimum Metacritic: <strong id="mcv">any</strong><input type="range" id="mc" min="0" max="90" step="5" value="0"></label>
+      <label for="age">Common Sense age, at most
+        <select id="age"><option value="99">Any age</option><option value="6">6+</option><option value="8">8+</option><option value="10">10+</option><option value="12">12+</option><option value="13">13+</option></select></label>
+      <label for="th">Theaters
+        <select id="th"><option value="all">Favorites + nearby</option><option value="fav">Favorites only</option><option value="10">Within 10 miles</option></select></label>
+      <label for="after">Starts at or after
+        <select id="after"><option value="0">Any time</option><option value="12">Noon</option><option value="16">4 PM</option><option value="18">6 PM</option></select></label>
+      <label class="check" for="osc"><input type="checkbox" id="osc"> Oscar-nominated only</label>
+      <label class="check" for="keepsp"><input type="checkbox" id="keepsp" checked> Always show unrated special events</label>
+      <label class="check" for="hidepast"><input type="checkbox" id="hidepast" checked> Hide showtimes that have started</label>
+    </div>
+    <div class="pfoot"><button class="done" id="done">Done</button></div>
+  </div>
+</div>
+
+<div class="focusbar" id="focusbar" hidden><span id="focustxt"></span><button id="unfocus">Show all movies</button></div>
+<div class="count" id="count"></div>
+<main id="out"></main>
+
+<div class="foot">
+  <div><strong>Sources.</strong> Showtimes and Fandango ratings from <a href="https://www.fandango.com/73120_movietimes">Fandango</a>. Metascores from <a href="https://www.metacritic.com">Metacritic</a> and age ratings from <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Credits from Wikipedia film articles.</div>
+  <div><strong>Not verified live.</strong> Oscar notes and the MPAA ratings of re-released classics (where Fandango lists a different rating) come from Claude's training knowledge, as do the Hotel Transylvania credits.</div>
+  <div><strong>The last two days</strong> in the strip are often partial; theaters post Thursday and Friday schedules midweek.</div>
+  <div><strong>Coming up</strong> combines Fandango's advance listings, Flix Brewhouse's event pages, and the Rodeo Cinema, OKCMOA, Fathom and Met Opera calendars.</div>
+  <div><strong>Walk-out time</strong> is showtime + runtime + 20 minutes of trailers. An estimate; chains vary.</div>
+  <div><strong>Distances</strong> are straight-line miles from home, not driving miles.</div>
+</div>
+</div>
+
+<script>
+const SB_URL="https://xdqmnyeamsoibcyncebf.supabase.co/rest/v1/";
+const SB_KEY="sb_publishable_TuNihZAbvA37go8pJE36jg_GGs2rIN-";
+const CITY=(new URLSearchParams(location.search).get("city")||"okc").toLowerCase().replace(/[^a-z0-9-]/g,"");
+let DATA, FAV_ORDER, DAYS;
+async function sb(path, all=false){
+  const out=[]; let from=0; const step=1000;
+  for(;;){
+    const r=await fetch(SB_URL+path,{headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Range-Unit":"items",Range:`${from}-${from+step-1}`}});
+    if(!r.ok) throw new Error(`${r.status} on ${path.split("?")[0]}`);
+    const rows=await r.json(); out.push(...rows);
+    if(!all || rows.length<step) return out;
+    from+=step;
+  }
+}
+async function fetchData(){
+  const ymd=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"))(new Date());
+  const ct=await sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`);
+  if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
+  const ids=ct.map(r=>r.theaters.id);
+  const [shows, events, log] = await Promise.all([
+    sb(`showtimes?select=theater_id,movie_id,show_date,start_time,format&theater_id=in.(${ids.join(",")})&show_date=gte.${ymd}&order=show_date,start_time`, true),
+    sb(`events?select=*&event_date=gte.${ymd}&or=(city_id.eq.${CITY},city_id.is.null)&order=event_date,title`, true),
+    sb(`refresh_log?select=finished_at&city_id=eq.${CITY}&status=eq.ok&order=finished_at.desc&limit=1`)
+  ]);
+  const mids=[...new Set(shows.map(s=>s.movie_id))];
+  const movies=[];
+  for(let i=0;i<mids.length;i+=150) movies.push(...await sb(`movies?select=*&id=in.(${mids.slice(i,i+150).join(",")})`));
+  const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null};
+  for(const r of ct){const t=r.theaters; D.theaters[t.id]={name:t.name,short:t.short_name,rank:r.rank,mi:Number(r.miles),indie:t.is_indie};}
+  for(const m of movies) D.movies[m.id]={t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors,wr:m.writers,st:m.stars,fd:m.fandango_url};
+  for(const s of shows) if(D.movies[s.movie_id]) D.shows.push([s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]);
+  for(const e of events) D.calendar.push({d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times});
+  return D;
+}
+
+
+const RATINGS = ["G","PG","PG-13","R","NR"];
+const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:"all", view:"theater", mc:0, age:99, th:"all", after:0, osc:false, keepsp:true, hidepast:true};
+const $=id=>document.getElementById(id);
+
+function load(){ try{ const v=JSON.parse(localStorage.getItem("mfs2")||"null"); if(v){ Object.assign(S,v,{ratings:new Set(v.ratings||["G","PG"]),mode:"show",focus:null,day:null}); } }catch(e){} }
+function save(){ try{ localStorage.setItem("mfs2", JSON.stringify({...S, ratings:[...S.ratings], day:null, focus:null, mode:"show"})); }catch(e){} }
+
+const pad=n=>String(n).padStart(2,"0");
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+function fmt(mins){ mins=((mins%1440)+1440)%1440; let h=Math.floor(mins/60), m=mins%60; const ap=h>=12?"p":"a"; h=h%12||12; return h+":"+pad(m)+ap; }
+const toMin=t=>{const [h,m]=t.split(":").map(Number);return h*60+m;};
+function dayLabel(d){const x=new Date(d+"T12:00:00");return {w:x.toLocaleDateString("en-US",{weekday:"short"}),md:(x.getMonth()+1)+"/"+x.getDate(),long:x.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})};}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+const byScore=(a,b)=>(DATA.movies[b].mc??-1)-(DATA.movies[a].mc??-1);
+
+function pills(el, items, isOn, onTap, cls="pill"){
+  el.innerHTML="";
+  items.forEach(([val,html])=>{const b=document.createElement("button");b.className=cls;b.innerHTML=html;b.setAttribute("aria-pressed",isOn(val));b.onclick=()=>{onTap(val);render();};el.appendChild(b);});
+}
+
+function movieOK(m, specialsMode){
+  if(S.osc && !m.osc) return false;
+  if(S.type==="anim" && m.anim!==true) return false;
+  if(S.type==="live" && m.anim!==false) return false;
+  if(specialsMode && !m.sp) return false;
+  const ratingOK=specialsMode || S.ratings.has(m.r);
+  if(!ratingOK && !(S.keepsp && m.sp && m.r==="NR")) return false;
+  if(S.mc>0 && !(m.mc>=S.mc)) return false;
+  if(S.age<99 && m.csm!=null && m.csm>S.age) return false;
+  return true;
+}
+function theaterOK(id){const t=DATA.theaters[id]; if(S.th==="fav") return t.rank!=null; if(S.th==="10") return t.mi<=10; return true;}
+
+function remainingCount(day){
+  const today=todayStr(), now=new Date(), nowMin=now.getHours()*60+now.getMinutes();
+  return DATA.shows.filter(s=>s[1]===day && theaterOK(s[0]) && movieOK(DATA.movies[s[2]],false) && toMin(s[4])>=S.after*60 && !(day===today && toMin(s[4])<nowMin)).length;
+}
+function defaultDay(){
+  const today=todayStr();
+  const ahead=DAYS.filter(d=>d>=today);
+  if(!ahead.length) return DAYS[DAYS.length-1];
+  if(ahead[0]===today && remainingCount(today)===0 && ahead[1]) return ahead[1];
+  return ahead[0];
+}
+function filterSummary(){
+  const parts=[[...S.ratings].sort((a,b)=>RATINGS.indexOf(a)-RATINGS.indexOf(b)).join(", ")||"No ratings"];
+  if(S.type!=="all") parts.push(S.type==="anim"?"Animated":"Live action");
+  if(S.mode==="show") parts.push(S.view==="theater"?"By theater":"By movie");
+  if(S.mc) parts.push("Meta "+S.mc+"+");
+  if(S.age<99) parts.push("Ages ≤"+S.age);
+  if(S.th!=="all") parts.push(S.th==="fav"?"Favorites only":"≤10 mi");
+  if(S.after) parts.push("After "+fmt(S.after*60));
+  if(S.osc) parts.push("Oscar only");
+  return parts.join(" · ");
+}
+
+function render(){
+  if(!S.day) S.day = defaultDay();
+  for(const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.mode===S.mode);
+  $("days").hidden = S.mode!=="show" || !!S.focus;
+  pills($("days"), DAYS.filter(d=>d>=todayStr()||d===DAYS[DAYS.length-1]).map(d=>{const l=dayLabel(d);return [d,`<b>${l.w}</b><small>${l.md}</small>`];}), v=>v===S.day, v=>{S.day=v;S.focus=null;}, "day");
+  pills($("ratings"), RATINGS.map(r=>[r,r]), v=>S.ratings.has(v), v=>{S.ratings.has(v)?S.ratings.delete(v):S.ratings.add(v);});
+  pills($("types"), [["all","All"],["anim","Animated"],["live","Live action"]], v=>v===S.type, v=>{S.type=v;});
+  pills($("views"), [["theater","Theater"],["movie","Movie"]], v=>v===S.view, v=>{S.view=v;});
+  $("viewbox").hidden = S.mode!=="show";
+  $("mcv").textContent=S.mc?S.mc+"+":"any";
+  $("fsum").textContent=filterSummary();
+  save();
+  if(S.mode==="cal"){ $("focusbar").hidden=true; renderCal(); return; }
+  renderShows();
+}
+
+function renderShows(){
+  const now=new Date(); const today=todayStr(); const nowMin=now.getHours()*60+now.getMinutes();
+  const spec=S.mode==="spec";
+  $("focusbar").hidden=!S.focus;
+  if(S.focus) $("focustxt").innerHTML=`Every upcoming showtime for <b>${esc(DATA.movies[S.focus].t)}</b>`;
+  const rows=DATA.shows.filter(s=>(S.focus ? (s[2]===S.focus && s[1]>=today) : (spec||s[1]===S.day) && movieOK(DATA.movies[s[2]],spec) && toMin(s[4])>=S.after*60) && theaterOK(s[0]))
+    .map(s=>({day:s[1],th:s[0],m:s[2],fmt:s[3],t:s[4],past:s[1]===today && toMin(s[4])<nowMin}))
+    .filter(r=>!(S.hidepast && r.past));
+  const out=$("out");
+  const films=new Set(rows.map(r=>r.m)), ths=new Set(rows.map(r=>r.th));
+  $("count").textContent = rows.length ? (spec?"Special showings, all week · ":"")+`${films.size} movie${films.size>1?"s":""} · ${rows.length} showtimes · ${ths.size} theater${ths.size>1?"s":""}` : "";
+  if(!rows.length){ out.innerHTML=`<div class="empty">Nothing matches. Try another day, add a rating, or loosen the filters.</div>`; return; }
+
+  let html="";
+  if(spec||S.focus){
+    for(const d of DAYS){
+      const dr=rows.filter(r=>r.day===d); if(!dr.length) continue;
+      const nm=new Set(dr.map(r=>r.m)).size;
+      html+=`<section class="group"><div class="ghead"><h2>${dayLabel(d).long}</h2><span class="meta">${S.focus?dr.length+" showtime"+(dr.length>1?"s":""):nm+" special"+(nm>1?"s":"")}</span></div>`;
+      for(const mid of [...new Set(dr.map(r=>r.m))].sort(byScore)){ const mr=dr.filter(r=>r.m===mid); html+=filmBlock(mid, FAV_ORDER.filter(t=>mr.some(r=>r.th===t)).map(t=>[t,mr.filter(r=>r.th===t)])); }
+      html+=`</section>`;
+    }
+    out.innerHTML=html; return;
+  }
+  // Specials strip for the selected day
+  const spm=[...films].filter(id=>DATA.movies[id].sp).sort(byScore);
+  if(spm.length){
+    html+=`<div class="strip"><h3>★ Special showings ${S.day===today?"today":"on "+dayLabel(S.day).w}</h3><div class="scroll">`+
+      spm.map(id=>{const m=DATA.movies[id]; const r=rows.filter(x=>x.m===id); const th=[...new Set(r.map(x=>DATA.theaters[x.th].short))]; const first=r.map(x=>toMin(x.t)).sort((a,b)=>a-b)[0];
+        return `<button class="spcard" data-focus="${id}"><b>${esc(m.t)}</b><small>${esc(m.sp)} · ${m.r}</small><small>${th.length>1?th.length+" theaters":esc(th[0])} · from ${fmt(first)}</small></button>`;}).join("")+`</div></div>`;
+  }
+  if(S.view==="theater"){
+    for(const tid of FAV_ORDER){
+      const tr=rows.filter(r=>r.th===tid); if(!tr.length) continue;
+      const t=DATA.theaters[tid];
+      html+=`<section class="group"><div class="ghead"><h2>${t.rank?`<span class="rank">#${t.rank}</span>`:""}${esc(t.short)}</h2><span class="meta">${t.mi} mi</span></div>`;
+      for(const mid of [...new Set(tr.map(r=>r.m))].sort(byScore)) html+=filmBlock(mid, [[null, tr.filter(r=>r.m===mid)]]);
+      html+=`</section>`;
+    }
+  } else {
+    html+=`<section class="group">`;
+    for(const mid of [...films].sort(byScore)){
+      const mr=rows.filter(r=>r.m===mid);
+      html+=filmBlock(mid, FAV_ORDER.filter(t=>mr.some(r=>r.th===t)).map(t=>[t,mr.filter(r=>r.th===t)]));
+    }
+    html+=`</section>`;
+  }
+  out.innerHTML=html;
+}
+
+function renderCal(){
+  const today=todayStr();
+  const ok=e=>!e.r || e.r==="NR" || S.ratings.has(e.r);
+  const all=(DATA.calendar||[]).filter(e=>e.d>=today);
+  const evs=all.filter(ok);
+  const hidden=all.length-evs.length;
+  $("count").textContent=`${evs.length} special showings ahead`+(hidden?` · ${hidden} more hidden by your rating filter`:"");
+  const order=t=>{const i=FAV_ORDER.indexOf(t);return i<0?99:i;};
+  const tagCls=s=>/ghibli/i.test(s)?"ghibli":/fathom|met opera/i.test(s)?"fathom":/concert|live/i.test(s)?"live":"";
+  let html="", curM="", curD="";
+  for(const e of evs){
+    const x=new Date(e.d+"T12:00");
+    const mon=x.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+    if(mon!==curM){ if(curM) html+="</section>"; html+=`<section class="month"><h2>${mon}</h2>`; curM=mon; curD=""; }
+    if(e.d!==curD){ html+=`<div class="dayhd">${x.toLocaleDateString("en-US",{weekday:"long"})} <small>${x.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></div>`; curD=e.d; }
+    const rows = e.th.length ? e.th.slice().sort((a,b)=>order(a[0])-order(b[0])).map(([tid,ts])=>{const th=DATA.theaters[tid]; return `<span class="nm">${esc(th?th.short:tid)}${th?` <small>${th.mi} mi</small>`:""}</span><span class="tm">${ts.map(s=>fmt(toMin(s))).join("  ")||"see link"}</span>`;}).join("") : `<span class="na">${esc(e.where||"")}</span>`;
+    html+=`<div class="ev"><h3><a class="evt" href="${e.src}" target="_blank" rel="noopener">${esc(e.t)}</a>${e.y?` <span class="yr">(${e.y})</span>`:""}</h3>
+      <div class="meta2"><span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}</div><div class="evwhere">${rows}</div></div>`;
+  }
+  if(curM) html+="</section>";
+  html+=`<p class="calnote">Chains post most special events 3 to 10 weeks ahead, so later months fill in over time.</p>`;
+  $("out").innerHTML=html;
+}
+
+function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
+function people(list){return list.map(([n,u])=>u?`<a href="${u}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
+function filmBlock(mid, groups){
+  const m=DATA.movies[mid];
+  const facts=[m.r + (m.fr && m.fr!==m.r ? ` (Fandango: ${m.fr})`:""), m.rt?`${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m`:"runtime TBA", m.anim===true?"Animated":m.anim===false?"Live action":null].filter(Boolean).join(" · ");
+  const badges=m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"";
+  const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${m.mcS}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">–<small>Metacritic</small></span>`;
+  const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${m.csmS}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">–<small>Ages</small></span>`;
+  const timeLines=groups.map(([tid,rs])=>{
+    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>out ~${fmt(s+m.rt+20)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${r.fmt}</em>`:""}</span>`;}).join("");
+    return `<div class="tline">${tid?`<span class="where">${esc(DATA.theaters[tid].short)} <small>${DATA.theaters[tid].mi} mi</small></span>`:""}${chips}</div>`;
+  }).join("");
+  const hasCred=m.dir.length||m.wr.length||m.st.length;
+  const credits = hasCred ? `<details class="cred"><summary>Director, writers, cast</summary><div class="credits">
+     ${m.dir.length?`<div><b>Director</b>${people(m.dir)}</div>`:""}
+     ${m.wr.length?`<div><b>Writers</b>${people(m.wr)}</div>`:""}
+     ${m.st.length?`<div><b>Starring</b>${people(m.st)}</div>`:""}
+     <div class="links">${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${m.fd}" target="_blank" rel="noopener">Tickets on Fandango</a></div></div></details>`
+     : `<div class="links"><a href="${m.fd}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
+  const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<2026?` <span class="yr">(${m.y})</span>`:""}</h3><div class="facts">${facts}</div>${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+    ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
+}
+
+function bind(id,key,parse){const el=$(id); const ev=el.type==="checkbox"?"change":"input"; el.addEventListener(ev,()=>{S[key]=el.type==="checkbox"?el.checked:parse(el.value);render();});}
+async function boot(){
+  $("out").innerHTML=`<div class="empty">Loading showtimes…</div>`;
+  try{ DATA=await fetchData(); }
+  catch(err){ const setup=/No theaters/.test(err.message); $("out").innerHTML=`<div class="empty">${setup?esc(err.message)+".":"Couldn't load showtimes ("+esc(err.message)+"). Check your connection and reload."}</div>`; return; }
+  FAV_ORDER = Object.entries(DATA.theaters).sort((a,b)=>((a[1].rank??99)-(b[1].rank??99))||(a[1].mi-b[1].mi)).map(e=>e[0]);
+  DAYS = [...new Set(DATA.shows.map(s=>s[1]))].sort();
+  if(!DAYS.length){ $("out").innerHTML=`<div class="empty">No showtimes loaded yet. The next refresh will fill them in.</div>`; return; }
+load();
+for(const b of document.querySelectorAll(".tabs button")) b.onclick=()=>{S.mode=b.dataset.mode;S.focus=null;render();window.scrollTo({top:0});};
+const setPanel=open=>{$("panel").hidden=!open;$("fbtn").setAttribute("aria-expanded",open);};
+$("fbtn").onclick=()=>setPanel($("panel").hidden);
+$("done").onclick=()=>setPanel(false);
+$("unfocus").onclick=()=>{S.focus=null;render();window.scrollTo({top:0});};
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-focus]"); if(!b) return; S.focus=b.dataset.focus; if(S.mode==="cal") S.mode="show"; render(); window.scrollTo({top:0});});
+for(const [id,key] of [["mc","mc"],["age","age"],["after","after"]]) $(id).value=S[key];
+$("th").value=S.th;
+for(const id of ["osc","keepsp","hidepast"]) $(id).checked=S[id];
+bind("mc","mc",Number); bind("age","age",Number); bind("th","th",String); bind("after","after",Number);
+bind("osc","osc"); bind("keepsp","keepsp"); bind("hidepast","hidepast");
+if(DATA.updated){ const u=new Date(DATA.updated); $("fresh").textContent=`Updated ${u.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}, ${u.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} · through ${dayLabel(DAYS[DAYS.length-1]).w} ${dayLabel(DAYS[DAYS.length-1]).md}`; }
+render();
+}
+boot();
+</script>
+</body>
+</html>
