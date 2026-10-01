@@ -274,8 +274,8 @@ function movieOK(m, specialsMode){
   if(S.type==="anim" && m.anim!==true) return false;
   if(S.type==="live" && m.anim!==false) return false;
   if(specialsMode && !m.sp) return false;
-  const ratingOK=specialsMode || S.ratings.has(m.r);
-  if(!ratingOK && !(S.keepsp && m.sp && m.r==="NR")) return false;
+  const unrated=!m.r || m.r==="NR";
+  if(!S.ratings.has(m.r||"NR") && !(S.keepsp && m.sp && unrated)) return false;
   if(S.mc>0 && !(m.mc>=S.mc)) return false;
   if(S.age<99 && m.csm!=null && m.csm>S.age) return false;
   return true;
@@ -295,6 +295,7 @@ function defaultDay(){
 }
 function filterSummary(){
   const parts=[[...S.ratings].sort((a,b)=>RATINGS.indexOf(a)-RATINGS.indexOf(b)).join(", ")||"No ratings"];
+  if(S.keepsp && !S.ratings.has("NR")) parts[0]+=" + unrated specials";
   if(S.type!=="all") parts.push(S.type==="anim"?"Animated":"Live action");
   if(S.mode==="show") parts.push(S.view==="theater"?"By theater":"By movie");
   if(S.mc) parts.push("Meta "+S.mc+"+");
@@ -373,7 +374,7 @@ function renderShows(){
 
 function renderCal(){
   const today=todayStr();
-  const ok=e=>!e.r || e.r==="NR" || S.ratings.has(e.r);
+  const ok=e=>S.ratings.has(e.r||"NR") || (S.keepsp && (!e.r || e.r==="NR"));
   const all=(DATA.calendar||[]).filter(e=>e.d>=today);
   const evs=all.filter(ok);
   const hidden=all.length-evs.length;
