@@ -192,6 +192,21 @@ h1 b{font-weight:800}
 .modal .acts button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:7px 16px;font-weight:700;cursor:pointer}
 .modal .acts button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .modal .err{color:var(--bad);font-size:.88rem}
+.zipline{display:flex;gap:8px}
+.zipline input{flex:1;min-width:0}
+.zipline button,.linkbtn{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:8px 12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.linkbtn{justify-self:start;padding:4px 10px;font-size:.85rem}
+.picker{display:grid;gap:8px}
+.pickhd small{display:block;color:var(--muted);font-size:.85rem;margin-top:2px}
+.plist{display:grid;gap:6px;max-height:320px;overflow:auto;padding:2px}
+button.pt{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px;text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer;font:inherit}
+button.pt .rk{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;font-weight:800;font-size:.85rem;color:var(--muted)}
+button.pt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+button.pt[aria-pressed="true"] .rk{background:var(--accent);border-color:var(--accent);color:#fff}
+button.pt b{display:block;font-size:.92rem;line-height:1.25}
+button.pt small{display:block;color:var(--muted);font-size:.78rem}
+button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.pmsg{font-size:.88rem;color:var(--muted)}
 .rqrates{border:0;padding:0;margin:0;display:grid;gap:6px}
 .rqrates legend{font-size:.88rem;font-weight:600;padding:0;margin-bottom:6px}
 .rqrates legend small{display:block;font-weight:400;color:var(--muted)}
@@ -257,16 +272,18 @@ h1 b{font-weight:800}
 <div class="modal-bg" id="reqmodal" hidden>
   <form class="modal" id="reqform" novalidate>
     <h2>Request your city</h2>
-    <p class="lead">Tell us your theaters and we'll set up your own page and send you the link.</p>
+    <p class="lead">Give us your zip and we'll set up your own page and send you the link.</p>
     <div class="preview" aria-live="polite"><b id="pvfam">Your</b> Family <span>Showtimes</span></div>
     <label for="rq-fam">Family last name <small>Shown at the top of your page</small><input id="rq-fam" maxlength="40" required autocomplete="family-name"></label>
     <label for="rq-contact">Email or phone <small>So we can send you the link. Not shown anywhere.</small><input id="rq-contact" maxlength="120" required autocomplete="email"></label>
-    <div class="row2">
-      <label for="rq-city">City and state<input id="rq-city" maxlength="80" required placeholder="Denver, CO"></label>
-      <label for="rq-zip">Zip<input id="rq-zip" maxlength="5" inputmode="numeric" pattern="[0-9]{5}" placeholder="80206"></label>
+    <label for="rq-zip">Home zip code <small>We'll find the theaters near you</small>
+      <span class="zipline"><input id="rq-zip" maxlength="5" inputmode="numeric" pattern="[0-9]{5}" placeholder="80206" autocomplete="postal-code"><button type="button" id="rq-find">Find theaters</button></span></label>
+    <div class="picker" id="rq-picker" hidden>
+      <div class="pickhd"><b>Favorite theaters</b> <small>Optional. Tap in order of preference: first tap is #1. Skip this and we'll include everything nearby, closest first.</small></div>
+      <div class="plist" id="rq-plist"></div>
+      <button type="button" class="linkbtn" id="rq-clear" hidden>Clear picks</button>
     </div>
-    <label for="rq-fav">Favorite theaters, best first <small>One per line</small><textarea id="rq-fav" maxlength="1000" required placeholder="Alamo Drafthouse Sloans Lake&#10;AMC Highlands Ranch 24"></textarea></label>
-    <label for="rq-other">Other theaters to include <small>Optional. Indie theaters, museum film series, anything we'd miss.</small><textarea id="rq-other" maxlength="1000"></textarea></label>
+    <label for="rq-other">Theaters we missed <small>Optional. Indie theaters, museum film series, anything not in the list.</small><textarea id="rq-other" maxlength="1000"></textarea></label>
     <fieldset class="rqrates"><legend>Ratings to show by default <small>Anyone can change these on their own device later</small></legend>
       <div class="chips" id="rq-rates"><button type="button" class="pill" aria-pressed="true" data-r="G">G</button><button type="button" class="pill" aria-pressed="true" data-r="PG">PG</button><button type="button" class="pill" aria-pressed="false" data-r="PG-13">PG-13</button><button type="button" class="pill" aria-pressed="false" data-r="R">R</button><button type="button" class="pill" aria-pressed="false" data-r="NR">NR</button></div>
     </fieldset>
@@ -281,6 +298,8 @@ h1 b{font-weight:800}
 <script>
 const SB_URL="https://xdqmnyeamsoibcyncebf.supabase.co/rest/v1/";
 const SB_KEY="sb_publishable_TuNihZAbvA37go8pJE36jg_GGs2rIN-";
+const FN_URL="https://xdqmnyeamsoibcyncebf.supabase.co/functions/v1/";
+const FN_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkcW1ueWVhbXNvaWJjeW5jZWJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NTkxNzcsImV4cCI6MjEwNjQzNTE3N30._OH7Ybl-pZo8CRGQGye-jxcEFaizffN0g5NWcaSwOMg";
 const CITY=(new URLSearchParams(location.search).get("city")||"okc").toLowerCase().replace(/[^a-z0-9-]/g,"");
 let DATA, FAV_ORDER, DAYS;
 async function sb(path, all=false){
@@ -542,13 +561,38 @@ function setupReq(){
   $("rq-cancel").onclick=closeReq;
   $("reqmodal").addEventListener("click",e=>{ if(e.target===$("reqmodal")) closeReq(); });
   document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("reqmodal").hidden) closeReq(); });
+  let picks=[], found=[];
+  const drawPicker=()=>{
+    $("rq-plist").innerHTML=found.map(t=>{const i=picks.indexOf(t.id);return `<button type="button" class="pt" data-id="${esc(t.id)}" aria-pressed="${i>=0}"><span class="rk">${i>=0?i+1:""}</span><span><b>${esc(t.name)}</b><small>${esc(t.address||"")}</small></span><span class="mi">${t.miles!=null?t.miles+" mi":""}</span></button>`;}).join("");
+    $("rq-clear").hidden=!picks.length;
+  };
+  const findTheaters=async()=>{
+    const z=$("rq-zip").value.trim();
+    if(!/^[0-9]{5}$/.test(z)){ $("rq-err").textContent="Enter a 5-digit zip to find theaters."; return; }
+    $("rq-err").textContent=""; $("rq-picker").hidden=false; $("rq-plist").innerHTML=`<div class="pmsg">Looking up theaters near ${z}…</div>`; $("rq-find").disabled=true;
+    try{
+      const r=await fetch(FN_URL+"theaters-near?zip="+z,{headers:{Authorization:"Bearer "+FN_KEY,apikey:FN_KEY}});
+      const j=await r.json(); if(!r.ok) throw new Error(j.error||r.status);
+      found=(j.theaters||[]).slice(0,25); picks=picks.filter(id=>found.some(t=>t.id===id));
+      if(!found.length){ $("rq-plist").innerHTML=`<div class="pmsg">No theaters found near ${z}. Add the ones you go to under "Theaters we missed."</div>`; }
+      else drawPicker();
+    }catch(e){ $("rq-plist").innerHTML=`<div class="pmsg">Couldn't look up theaters right now. You can still send the request; list your favorites under "Theaters we missed."</div>`; }
+    $("rq-find").disabled=false;
+  };
+  $("rq-find").onclick=findTheaters;
+  $("rq-zip").addEventListener("input",()=>{ if(/^[0-9]{5}$/.test($("rq-zip").value.trim()) && $("rq-zip").value.trim()!==$("rq-zip").dataset.last){ $("rq-zip").dataset.last=$("rq-zip").value.trim(); findTheaters(); } });
+  $("rq-zip").addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); findTheaters(); } });
+  $("rq-plist").addEventListener("click",e=>{const b=e.target.closest(".pt"); if(!b) return; const id=b.dataset.id; const i=picks.indexOf(id); if(i>=0) picks.splice(i,1); else if(picks.length<15) picks.push(id); drawPicker();});
+  $("rq-clear").onclick=()=>{picks=[];drawPicker();};
+  $("reqform").getPicks=()=>picks.map(id=>{const t=found.find(x=>x.id===id); return {id, name:t?.name, miles:t?.miles};});
+  $("reqform").getCity=()=>{ const a=found[0]?.address||""; const m=a.match(/,\s*([^,]+),\s*([A-Z]{2})\s*\d{5}/); return m? `${m[1]}, ${m[2]}` : null; };
   $("rq-rates").addEventListener("click",e=>{const b=e.target.closest("[data-r]"); if(!b) return; b.setAttribute("aria-pressed", b.getAttribute("aria-pressed")!=="true");});
   $("rq-fam").addEventListener("input",()=>{ $("pvfam").textContent=$("rq-fam").value.trim()||"Your"; });
   $("reqform").addEventListener("submit",async e=>{
     e.preventDefault();
     const v=id=>$(id).value.trim();
     if(v("rq-web")){ closeReq(); return; }
-    const miss=[["rq-fam","family last name"],["rq-contact","email or phone"],["rq-city","city and state"],["rq-fav","favorite theaters"]].filter(([id])=>!v(id)).map(x=>x[1]);
+    const miss=[["rq-fam","family last name"],["rq-contact","email or phone"],["rq-zip","zip code"]].filter(([id])=>!v(id)).map(x=>x[1]);
     if(miss.length){ $("rq-err").textContent="Please add your "+miss.join(", ")+"."; return; }
     const rates=[...$("rq-rates").querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.r);
     if(!rates.length){ $("rq-err").textContent="Pick at least one rating to show by default."; return; }
@@ -556,7 +600,7 @@ function setupReq(){
     $("rq-send").disabled=true; $("rq-send").textContent="Sending…";
     try{
       const r=await fetch(SB_URL+"city_requests",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},
-        body:JSON.stringify({family_name:v("rq-fam"),contact:v("rq-contact"),city:v("rq-city"),zip:v("rq-zip")||null,favorite_theaters:v("rq-fav"),other_theaters:v("rq-other")||null,home_hint:v("rq-home")||null,notes:v("rq-notes")||null,default_ratings:rates})});
+        body:JSON.stringify({family_name:v("rq-fam"),contact:v("rq-contact"),city:$("reqform").getCity(),zip:v("rq-zip"),favorite_ids:$("reqform").getPicks(),favorite_theaters:null,other_theaters:v("rq-other")||null,home_hint:v("rq-home")||null,notes:v("rq-notes")||null,default_ratings:rates})});
       if(!r.ok) throw new Error(r.status);
       $("reqform").innerHTML=`<h2>Request sent</h2><p class="lead"><b>${esc(v("rq-fam")||"Your")} Family Showtimes</b> is on the list. We'll set up your theaters and send the link to the contact you gave.</p><div class="acts"><button type="button" class="primary" id="rq-close">Close</button></div>`;
       $("rq-close").onclick=closeReq;
