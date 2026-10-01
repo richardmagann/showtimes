@@ -38,8 +38,9 @@ button{font-family:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* Header */
-header.top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding-block:14px 6px;flex-wrap:wrap}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(1.3rem,6.2vw,1.7rem);white-space:nowrap;line-height:1;letter-spacing:.02em;text-transform:uppercase;margin:0}
+header.top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:10px;row-gap:2px;padding-block:14px 6px}
+header.top .fresh{grid-column:1/-1}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(1.2rem,5.6vw,1.7rem);text-wrap:balance;line-height:1;letter-spacing:.02em;text-transform:uppercase;margin:0}
 h1 span{color:var(--accent)}
 .fresh{font-size:.78rem;color:var(--muted)}
 
@@ -156,6 +157,42 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .calnote{font-size:.85rem;color:var(--muted);margin-top:12px;max-width:68ch}
 
 .foot{margin-top:36px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px;max-width:68ch}
+h1 b{font-weight:800}
+.hdr-actions{display:flex;gap:6px}
+.ibtn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:800;cursor:pointer}
+.addcity{margin-top:32px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.addcity div{display:grid;gap:2px;min-width:0}
+.addcity span{font-size:.88rem;color:var(--muted)}
+
+/* Tour */
+.tour-ring{position:fixed;z-index:50;border-radius:12px;box-shadow:0 0 0 3px var(--accent),0 0 0 9999px rgba(10,8,12,.62);pointer-events:none;transition:all .25s ease}
+.tour-card{position:fixed;z-index:51;left:16px;right:16px;max-width:420px;margin-inline:auto;background:var(--surface);color:var(--fg);border-radius:14px;padding:14px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.tour-card h3{margin:0 0 4px;font-size:1.05rem}
+.tour-card p{margin:0;font-size:.95rem;line-height:1.45}
+.tour-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px}
+.tour-nav .dots{font-size:.8rem;color:var(--muted)}
+.tour-nav .btns{display:flex;gap:6px}
+.tour-nav button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 14px;font-weight:700;cursor:pointer}
+.tour-nav button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.tour-block{position:fixed;inset:0;z-index:49}
+
+/* Request form */
+.modal-bg{position:fixed;inset:0;z-index:60;background:rgba(10,8,12,.6);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:24px 16px}
+.modal{background:var(--surface);color:var(--fg);border-radius:14px;width:100%;max-width:520px;padding:18px;display:grid;gap:12px}
+.modal h2{margin:0;font-size:1.25rem}
+.modal p.lead{margin:0;color:var(--muted);font-size:.92rem}
+.modal label{display:grid;gap:4px;font-size:.88rem;font-weight:600}
+.modal label small{font-weight:400;color:var(--muted)}
+.modal input,.modal textarea{font:inherit;font-weight:400;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+.modal textarea{min-height:84px;resize:vertical}
+.modal .preview{font-family:var(--display);font-weight:800;text-transform:uppercase;font-size:1.1rem;letter-spacing:.02em}
+.modal .preview span{color:var(--accent)}
+.modal .row2{display:grid;grid-template-columns:2fr 1fr;gap:10px}
+.modal .acts{display:flex;justify-content:flex-end;gap:8px}
+.modal .acts button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:7px 16px;font-weight:700;cursor:pointer}
+.modal .acts button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.modal .err{color:var(--bad);font-size:.88rem}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -163,7 +200,8 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 
 <div class="wrap">
 <header class="top">
-  <h1>Magann Family <span>Showtimes</span></h1>
+  <h1><b id="fam">Magann</b> Family <span>Showtimes</span></h1>
+  <div class="hdr-actions"><button class="ibtn" id="tourbtn" aria-label="How this works" title="How this works">?</button></div>
   <span class="fresh" id="fresh"></span>
 </header>
 
@@ -202,14 +240,36 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 <div class="count" id="count"></div>
 <main id="out"></main>
 
+<div class="addcity"><div><b>Want this for your city?</b><span>Pick your favorite theaters and get your own family page.</span></div><button class="done" id="reqbtn2">Request your city</button></div>
 <div class="foot">
   <div><strong>Sources.</strong> Showtimes and Fandango ratings from <a href="https://www.fandango.com/73120_movietimes">Fandango</a>. Metascores from <a href="https://www.metacritic.com">Metacritic</a> and age ratings from <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Credits from Wikipedia film articles.</div>
   <div><strong>Not verified live.</strong> Oscar notes and the MPAA ratings of re-released classics (where Fandango lists a different rating) come from Claude's training knowledge, as do the Hotel Transylvania credits.</div>
   <div><strong>The last two days</strong> in the strip are often partial; theaters post Thursday and Friday schedules midweek.</div>
   <div><strong>Coming up</strong> combines Fandango's advance listings, Flix Brewhouse's event pages, and the Rodeo Cinema, OKCMOA, Fathom and Met Opera calendars.</div>
-  <div><strong>Walk-out time</strong> is showtime + runtime + 20 minutes of trailers. An estimate; chains vary.</div>
+  <div><strong>End time</strong> is showtime + runtime + 20 minutes of trailers. An estimate; chains vary.</div>
   <div><strong>Distances</strong> are straight-line miles from home, not driving miles.</div>
 </div>
+</div>
+
+<div class="modal-bg" id="reqmodal" hidden>
+  <form class="modal" id="reqform" novalidate>
+    <h2>Request your city</h2>
+    <p class="lead">Tell us your theaters and we'll set up your own page and send you the link.</p>
+    <div class="preview" aria-live="polite"><b id="pvfam">Your</b> Family <span>Showtimes</span></div>
+    <label for="rq-fam">Family last name <small>Shown at the top of your page</small><input id="rq-fam" maxlength="40" required autocomplete="family-name"></label>
+    <label for="rq-contact">Email or phone <small>So we can send you the link. Not shown anywhere.</small><input id="rq-contact" maxlength="120" required autocomplete="email"></label>
+    <div class="row2">
+      <label for="rq-city">City and state<input id="rq-city" maxlength="80" required placeholder="Denver, CO"></label>
+      <label for="rq-zip">Zip<input id="rq-zip" maxlength="5" inputmode="numeric" pattern="[0-9]{5}" placeholder="80206"></label>
+    </div>
+    <label for="rq-fav">Favorite theaters, best first <small>One per line</small><textarea id="rq-fav" maxlength="1000" required placeholder="Alamo Drafthouse Sloans Lake&#10;AMC Highlands Ranch 24"></textarea></label>
+    <label for="rq-other">Other theaters to include <small>Optional. Indie theaters, museum film series, anything we'd miss.</small><textarea id="rq-other" maxlength="1000"></textarea></label>
+    <label for="rq-home">Nearest cross streets <small>Optional. Used only to work out miles to each theater; never shown.</small><input id="rq-home" maxlength="120" placeholder="Colfax &amp; York"></label>
+    <label for="rq-notes">Anything else <small>Optional</small><textarea id="rq-notes" maxlength="1000"></textarea></label>
+    <div class="hp" aria-hidden="true"><label for="rq-web">Website<input id="rq-web" tabindex="-1" autocomplete="off"></label></div>
+    <div class="err" id="rq-err" role="alert"></div>
+    <div class="acts"><button type="button" id="rq-cancel">Cancel</button><button type="submit" class="primary" id="rq-send">Send request</button></div>
+  </form>
 </div>
 
 <script>
@@ -229,7 +289,7 @@ async function sb(path, all=false){
 }
 async function fetchData(){
   const ymd=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"))(new Date());
-  const ct=await sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`);
+  const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
   if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
   const ids=ct.map(r=>r.theaters.id);
   const [shows, events, log] = await Promise.all([
@@ -240,7 +300,7 @@ async function fetchData(){
   const mids=[...new Set(shows.map(s=>s.movie_id))];
   const movies=[];
   for(let i=0;i<mids.length;i+=150) movies.push(...await sb(`movies?select=*&id=in.(${mids.slice(i,i+150).join(",")})`));
-  const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null};
+  const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,cityName:city[0]?.name||null};
   for(const r of ct){const t=r.theaters; D.theaters[t.id]={name:t.name,short:t.short_name,rank:r.rank,mi:Number(r.miles),indie:t.is_indie};}
   for(const m of movies) D.movies[m.id]={t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors,wr:m.writers,st:m.stars,fd:m.fandango_url};
   for(const s of shows) if(D.movies[s.movie_id]) D.shows.push([s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]);
@@ -405,7 +465,7 @@ function filmBlock(mid, groups){
   const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${m.mcS}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">–<small>Metacritic</small></span>`;
   const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${m.csmS}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">–<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
-    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>out ~${fmt(s+m.rt+20)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${r.fmt}</em>`:""}</span>`;}).join("");
+    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>ends ~${fmt(s+m.rt+20)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${r.fmt}</em>`:""}</span>`;}).join("");
     return `<div class="tline">${tid?`<span class="where">${esc(DATA.theaters[tid].short)} <small>${DATA.theaters[tid].mi} mi</small></span>`:""}${chips}</div>`;
   }).join("");
   const hasCred=m.dir.length||m.wr.length||m.st.length;
@@ -420,11 +480,91 @@ function filmBlock(mid, groups){
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
+/* ---------- First-visit tour ---------- */
+const TOUR=[
+  {sel:".tabs", title:"Three ways to look", text:"Showtimes is one day at a time. Specials pulls together one-off and classic screenings for the whole week. Coming up looks months ahead."},
+  {sel:"#days", title:"Pick a day", text:"Swipe for more days. Days that have passed drop off, and if tonight's showings are over it opens on tomorrow."},
+  {sel:".filterline", title:"Filters", text:"Ratings, animated or live action, minimum Metacritic, Common Sense ages, theaters and start time. Your choices are remembered on this device."},
+  {sel:"#out .film", title:"Reading a movie", text:"Green Metacritic means 70 or higher. Ages is Common Sense Media's age guide. Each time shows about when the movie ends, including trailers. Tap a title to see every showtime for just that movie."},
+  {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
+  {sel:"#tourbtn", title:"That's it", text:"Tap ? any time to see this again. Enjoy the show."}
+];
+let tourEls=null, tourI=0;
+function tourKey(){ return "mfs-tour-v1"; }
+function tourSteps(){ return TOUR.filter(s=>document.querySelector(s.sel)); }
+function endTour(){ if(!tourEls) return; tourEls.forEach(e=>e.remove()); tourEls=null; window.removeEventListener("resize",placeTour); window.removeEventListener("scroll",placeTour,true); try{localStorage.setItem(tourKey(),"1");}catch(e){} }
+function placeTour(){
+  if(!tourEls) return;
+  const steps=tourSteps(); const st=steps[tourI]; const el=document.querySelector(st.sel); if(!el) return;
+  const [ring,card]=tourEls; const r=el.getBoundingClientRect(); const pad=6;
+  Object.assign(ring.style,{top:(r.top-pad)+"px",left:(r.left-pad)+"px",width:(r.width+pad*2)+"px",height:(r.height+pad*2)+"px"});
+  const below=r.bottom+pad+12, ch=card.offsetHeight, vh=window.innerHeight;
+  card.style.top = (below+ch < vh-8 ? below : Math.max(8, r.top-pad-12-ch)) + "px";
+}
+function showTourStep(i){
+  const steps=tourSteps(); tourI=Math.max(0,Math.min(i,steps.length-1)); const st=steps[tourI];
+  const el=document.querySelector(st.sel);
+  const inBar=el.closest(".bar")||el.closest("header");
+  if(!inBar){ el.scrollIntoView({block:"center"}); } else { window.scrollTo({top:0}); }
+  const card=tourEls[1];
+  card.innerHTML=`<h3>${st.title}</h3><p>${st.text}</p><div class="tour-nav"><span class="dots">${tourI+1} of ${steps.length}</span><span class="btns">${tourI<steps.length-1?`<button type="button" data-t="skip">Skip</button>`:""}${tourI>0?`<button type="button" data-t="back">Back</button>`:""}<button type="button" class="primary" data-t="next">${tourI<steps.length-1?"Next":"Done"}</button></span></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(placeTour));
+  card.querySelector('[data-t="next"]').focus({preventScroll:true});
+}
+function startTour(){
+  if(tourEls) endTour();
+  if(S.mode!=="show"||S.focus){ S.mode="show"; S.focus=null; render(); }
+  $("panel").hidden=true; $("fbtn").setAttribute("aria-expanded",false);
+  const block=document.createElement("div"); block.className="tour-block";
+  const ring=document.createElement("div"); ring.className="tour-ring";
+  const card=document.createElement("div"); card.className="tour-card"; card.setAttribute("role","dialog"); card.setAttribute("aria-label","How this works");
+  card.addEventListener("click",e=>{const b=e.target.closest("[data-t]"); if(!b) return; const steps=tourSteps();
+    if(b.dataset.t==="skip") endTour(); else if(b.dataset.t==="back") showTourStep(tourI-1); else if(tourI>=steps.length-1) endTour(); else showTourStep(tourI+1);});
+  document.addEventListener("keydown",function k(e){ if(!tourEls){document.removeEventListener("keydown",k);return;} if(e.key==="Escape") endTour(); });
+  document.body.append(block,ring,card); tourEls=[ring,card,block];
+  window.addEventListener("resize",placeTour); window.addEventListener("scroll",placeTour,true);
+  showTourStep(0);
+}
+function maybeTour(){ let seen=false; try{seen=localStorage.getItem(tourKey())==="1";}catch(e){} if(!seen) setTimeout(startTour,400); }
+
+/* ---------- Request your city ---------- */
+function openReq(){ $("reqmodal").hidden=false; $("rq-err").textContent=""; setTimeout(()=>$("rq-fam").focus(),30); }
+function closeReq(){ $("reqmodal").hidden=true; }
+function setupReq(){
+  $("reqbtn2").onclick=openReq;
+  $("rq-cancel").onclick=closeReq;
+  $("reqmodal").addEventListener("click",e=>{ if(e.target===$("reqmodal")) closeReq(); });
+  document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("reqmodal").hidden) closeReq(); });
+  $("rq-fam").addEventListener("input",()=>{ $("pvfam").textContent=$("rq-fam").value.trim()||"Your"; });
+  $("reqform").addEventListener("submit",async e=>{
+    e.preventDefault();
+    const v=id=>$(id).value.trim();
+    if(v("rq-web")){ closeReq(); return; }
+    const miss=[["rq-fam","family last name"],["rq-contact","email or phone"],["rq-city","city and state"],["rq-fav","favorite theaters"]].filter(([id])=>!v(id)).map(x=>x[1]);
+    if(miss.length){ $("rq-err").textContent="Please add your "+miss.join(", ")+"."; return; }
+    if(v("rq-zip") && !/^[0-9]{5}$/.test(v("rq-zip"))){ $("rq-err").textContent="Zip should be 5 digits."; return; }
+    $("rq-send").disabled=true; $("rq-send").textContent="Sending…";
+    try{
+      const r=await fetch(SB_URL+"city_requests",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},
+        body:JSON.stringify({family_name:v("rq-fam"),contact:v("rq-contact"),city:v("rq-city"),zip:v("rq-zip")||null,favorite_theaters:v("rq-fav"),other_theaters:v("rq-other")||null,home_hint:v("rq-home")||null,notes:v("rq-notes")||null})});
+      if(!r.ok) throw new Error(r.status);
+      $("reqform").innerHTML=`<h2>Request sent</h2><p class="lead"><b>${esc(v("rq-fam")||"Your")} Family Showtimes</b> is on the list. We'll set up your theaters and send the link to the contact you gave.</p><div class="acts"><button type="button" class="primary" id="rq-close">Close</button></div>`;
+      $("rq-close").onclick=closeReq;
+    }catch(err){
+      $("rq-err").textContent="That didn't go through. Check your connection and try again.";
+      $("rq-send").disabled=false; $("rq-send").textContent="Send request";
+    }
+  });
+}
+
 function bind(id,key,parse){const el=$(id); const ev=el.type==="checkbox"?"change":"input"; el.addEventListener(ev,()=>{S[key]=el.type==="checkbox"?el.checked:parse(el.value);render();});}
 async function boot(){
+  setupReq();
+  $("tourbtn").onclick=()=>{ if(DATA) startTour(); };
   $("out").innerHTML=`<div class="empty">Loading showtimes…</div>`;
   try{ DATA=await fetchData(); }
-  catch(err){ const setup=/No theaters/.test(err.message); $("out").innerHTML=`<div class="empty">${setup?esc(err.message)+".":"Couldn't load showtimes ("+esc(err.message)+"). Check your connection and reload."}</div>`; return; }
+  catch(err){ const setup=/No theaters/.test(err.message); $("out").innerHTML=`<div class="empty">${setup?`This city isn't set up yet. <button class="done" id="reqbtn3">Request your city</button>`:"Couldn't load showtimes ("+esc(err.message)+"). Check your connection and reload."}</div>`; if(setup){ $("fam").textContent="Your"; $("reqbtn3").onclick=openReq; } return; }
+  if(DATA.family){ $("fam").textContent=DATA.family; document.title=`${DATA.family} Family Showtimes`; }
   FAV_ORDER = Object.entries(DATA.theaters).sort((a,b)=>((a[1].rank??99)-(b[1].rank??99))||(a[1].mi-b[1].mi)).map(e=>e[0]);
   DAYS = [...new Set(DATA.shows.map(s=>s[1]))].sort();
   if(!DAYS.length){ $("out").innerHTML=`<div class="empty">No showtimes loaded yet. The next refresh will fill them in.</div>`; return; }
@@ -442,6 +582,7 @@ bind("mc","mc",Number); bind("age","age",Number); bind("th","th",String); bind("
 bind("osc","osc"); bind("keepsp","keepsp"); bind("hidepast","hidepast");
 if(DATA.updated){ const u=new Date(DATA.updated); $("fresh").textContent=`Updated ${u.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}, ${u.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} · through ${dayLabel(DAYS[DAYS.length-1]).w} ${dayLabel(DAYS[DAYS.length-1]).md}`; }
 render();
+maybeTour();
 }
 boot();
 </script>
