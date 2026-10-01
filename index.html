@@ -192,6 +192,9 @@ h1 b{font-weight:800}
 .modal .acts button{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:7px 16px;font-weight:700;cursor:pointer}
 .modal .acts button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 .modal .err{color:var(--bad);font-size:.88rem}
+.rqrates{border:0;padding:0;margin:0;display:grid;gap:6px}
+.rqrates legend{font-size:.88rem;font-weight:600;padding:0;margin-bottom:6px}
+.rqrates legend small{display:block;font-weight:400;color:var(--muted)}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -264,6 +267,9 @@ h1 b{font-weight:800}
     </div>
     <label for="rq-fav">Favorite theaters, best first <small>One per line</small><textarea id="rq-fav" maxlength="1000" required placeholder="Alamo Drafthouse Sloans Lake&#10;AMC Highlands Ranch 24"></textarea></label>
     <label for="rq-other">Other theaters to include <small>Optional. Indie theaters, museum film series, anything we'd miss.</small><textarea id="rq-other" maxlength="1000"></textarea></label>
+    <fieldset class="rqrates"><legend>Ratings to show by default <small>Anyone can change these on their own device later</small></legend>
+      <div class="chips" id="rq-rates"><button type="button" class="pill" aria-pressed="true" data-r="G">G</button><button type="button" class="pill" aria-pressed="true" data-r="PG">PG</button><button type="button" class="pill" aria-pressed="false" data-r="PG-13">PG-13</button><button type="button" class="pill" aria-pressed="false" data-r="R">R</button><button type="button" class="pill" aria-pressed="false" data-r="NR">NR</button></div>
+    </fieldset>
     <label for="rq-home">Nearest cross streets <small>Optional. Used only to work out miles to each theater; never shown.</small><input id="rq-home" maxlength="120" placeholder="Colfax &amp; York"></label>
     <label for="rq-notes">Anything else <small>Optional</small><textarea id="rq-notes" maxlength="1000"></textarea></label>
     <div class="hp" aria-hidden="true"><label for="rq-web">Website<input id="rq-web" tabindex="-1" autocomplete="off"></label></div>
@@ -289,7 +295,7 @@ async function sb(path, all=false){
 }
 async function fetchData(){
   const ymd=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"))(new Date());
-  const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
+  const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name,default_ratings`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
   if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
   const ids=ct.map(r=>r.theaters.id);
   const [shows, events, log] = await Promise.all([
@@ -300,7 +306,7 @@ async function fetchData(){
   const mids=[...new Set(shows.map(s=>s.movie_id))];
   const movies=[];
   for(let i=0;i<mids.length;i+=150) movies.push(...await sb(`movies?select=*&id=in.(${mids.slice(i,i+150).join(",")})`));
-  const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,cityName:city[0]?.name||null};
+  const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,defaultRatings:city[0]?.default_ratings||["G","PG"],cityName:city[0]?.name||null};
   for(const r of ct){const t=r.theaters; D.theaters[t.id]={name:t.name,short:t.short_name,rank:r.rank,mi:Number(r.miles),indie:t.is_indie};}
   for(const m of movies) D.movies[m.id]={t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors,wr:m.writers,st:m.stars,fd:m.fandango_url};
   for(const s of shows) if(D.movies[s.movie_id]) D.shows.push([s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]);
@@ -313,8 +319,9 @@ const RATINGS = ["G","PG","PG-13","R","NR"];
 const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:"all", view:"theater", mc:0, age:99, th:"all", after:0, osc:false, keepsp:true, hidepast:true};
 const $=id=>document.getElementById(id);
 
-function load(){ try{ const v=JSON.parse(localStorage.getItem("mfs2")||"null"); if(v){ Object.assign(S,v,{ratings:new Set(v.ratings||["G","PG"]),mode:"show",focus:null,day:null}); } }catch(e){} }
-function save(){ try{ localStorage.setItem("mfs2", JSON.stringify({...S, ratings:[...S.ratings], day:null, focus:null, mode:"show"})); }catch(e){} }
+const PREF_KEY="mfs2-"+CITY;
+function load(){ S.ratings=new Set(DATA.defaultRatings); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ Object.assign(S,v,{ratings:new Set(v.ratings||DATA.defaultRatings),mode:"show",focus:null,day:null}); } }catch(e){} }
+function save(){ try{ localStorage.setItem(PREF_KEY, JSON.stringify({...S, ratings:[...S.ratings], day:null, focus:null, mode:"show"})); }catch(e){} }
 
 const pad=n=>String(n).padStart(2,"0");
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
@@ -465,7 +472,7 @@ function filmBlock(mid, groups){
   const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${m.mcS}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">–<small>Metacritic</small></span>`;
   const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${m.csmS}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">–<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
-    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>ends ~${fmt(s+m.rt+20)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${r.fmt}</em>`:""}</span>`;}).join("");
+    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>ends ~${fmt(Math.round((s+m.rt+20)/5)*5)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${r.fmt}</em>`:""}</span>`;}).join("");
     return `<div class="tline">${tid?`<span class="where">${esc(DATA.theaters[tid].short)} <small>${DATA.theaters[tid].mi} mi</small></span>`:""}${chips}</div>`;
   }).join("");
   const hasCred=m.dir.length||m.wr.length||m.st.length;
@@ -535,6 +542,7 @@ function setupReq(){
   $("rq-cancel").onclick=closeReq;
   $("reqmodal").addEventListener("click",e=>{ if(e.target===$("reqmodal")) closeReq(); });
   document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !$("reqmodal").hidden) closeReq(); });
+  $("rq-rates").addEventListener("click",e=>{const b=e.target.closest("[data-r]"); if(!b) return; b.setAttribute("aria-pressed", b.getAttribute("aria-pressed")!=="true");});
   $("rq-fam").addEventListener("input",()=>{ $("pvfam").textContent=$("rq-fam").value.trim()||"Your"; });
   $("reqform").addEventListener("submit",async e=>{
     e.preventDefault();
@@ -542,11 +550,13 @@ function setupReq(){
     if(v("rq-web")){ closeReq(); return; }
     const miss=[["rq-fam","family last name"],["rq-contact","email or phone"],["rq-city","city and state"],["rq-fav","favorite theaters"]].filter(([id])=>!v(id)).map(x=>x[1]);
     if(miss.length){ $("rq-err").textContent="Please add your "+miss.join(", ")+"."; return; }
+    const rates=[...$("rq-rates").querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.r);
+    if(!rates.length){ $("rq-err").textContent="Pick at least one rating to show by default."; return; }
     if(v("rq-zip") && !/^[0-9]{5}$/.test(v("rq-zip"))){ $("rq-err").textContent="Zip should be 5 digits."; return; }
     $("rq-send").disabled=true; $("rq-send").textContent="Sending…";
     try{
       const r=await fetch(SB_URL+"city_requests",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},
-        body:JSON.stringify({family_name:v("rq-fam"),contact:v("rq-contact"),city:v("rq-city"),zip:v("rq-zip")||null,favorite_theaters:v("rq-fav"),other_theaters:v("rq-other")||null,home_hint:v("rq-home")||null,notes:v("rq-notes")||null})});
+        body:JSON.stringify({family_name:v("rq-fam"),contact:v("rq-contact"),city:v("rq-city"),zip:v("rq-zip")||null,favorite_theaters:v("rq-fav"),other_theaters:v("rq-other")||null,home_hint:v("rq-home")||null,notes:v("rq-notes")||null,default_ratings:rates})});
       if(!r.ok) throw new Error(r.status);
       $("reqform").innerHTML=`<h2>Request sent</h2><p class="lead"><b>${esc(v("rq-fam")||"Your")} Family Showtimes</b> is on the list. We'll set up your theaters and send the link to the contact you gave.</p><div class="acts"><button type="button" class="primary" id="rq-close">Close</button></div>`;
       $("rq-close").onclick=closeReq;
