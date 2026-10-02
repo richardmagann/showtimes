@@ -421,9 +421,11 @@ const FAMILY_MAX_AGE=10;
 function famOK(o){
   if(o.fam!=null) return o.fam;
   if(o.csm!=null) return o.csm<=FAMILY_MAX_AGE;
-  const g=o.g||"";
+  const g=o.g||"", sp=o.sp||"";
   if(/horror|thriller|suspense/i.test(g)) return false;
-  return /family|kids/i.test(g) || /ghibli/i.test(o.sp||"");
+  // Opera broadcasts and concert films count as family unless one is hand-marked otherwise (e.g. a metal show).
+  if(/met opera|concert/i.test(sp)) return true;
+  return /family|kids/i.test(g) || /ghibli/i.test(sp);
 }
 function ratingOK(o, special){
   const unrated=!o.r || o.r==="NR";
@@ -626,7 +628,7 @@ function filmBlock(mid, groups){
 /* ---------- First-visit tour ---------- */
 const TOUR=[
   {center:true, next:"Take the tour", title:"Rich's One-Stop Showtimes", text:"<i class='tagline'>Going to the movies really shouldn't be this hard.</i>Every movie at your favorite theaters on one page, filtered to the ratings you want (e.g., PG only), with critics' scores, age guides, trailers, and the time you'll walk out.<br><br>Richard built this because he was sick of checking five different sites to answer three questions: Is it any good? Is it right for kids of different ages? Is it playing at a good theater?<br><br>Built for families, but adaptable to everyone.<span class='madeby'>Created by Richard Magann</span>"},
-  {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows G and PG movies, plus unrated ones that look family-friendly (Common Sense Media ages 10 and under). <b>Grown-ups</b> shows everything. Switch any time."},
+  {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows G and PG movies, plus unrated ones that look family-friendly: Common Sense Media ages 10 and under, opera broadcasts and most concerts. <b>Grown-ups</b> shows everything. Switch any time."},
   {sel:".tabs", title:"Three tabs", text:"<b>Showtimes</b>: what's playing, one day at a time.<br><b>★ Specials</b>: one-off and classic screenings at your theaters over the next week or so.<br><b>Coming soon</b>: movies that aren't out yet, plus special events further ahead."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
   {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Your choices are remembered on this device."},
