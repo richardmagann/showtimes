@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate a page per family at /<city>/ so link previews (iMessage, Slack, etc.)
-show that family's name. Previews read the static <title>/og tags and don't run
+show who the page was made for and their city. Previews read the static <title>/og tags and don't run
 JavaScript, so ?city=... alone can't change them.
 
 index.html is the single source. Edit it, then run:  python3 build_cities.py
@@ -9,8 +9,8 @@ To add a family, add a line to CITIES (id must match cities.id in Supabase).
 import pathlib
 
 CITIES = {
-    # id: (family name, city name for the preview text)
-    "dallas": ("Fife", "Dallas"),
+    # id: (who the page is for, city name for the preview text)
+    "dallas": ("the Fife family", "Dallas"),
 }
 
 root = pathlib.Path(__file__).parent
@@ -20,12 +20,11 @@ def swap(s, old, new):
     assert old in s, f"build_cities: expected text not found: {old[:60]}"
     return s.replace(old, new)
 
-for cid, (family, city) in CITIES.items():
+for cid, (made_for, city) in CITIES.items():
     s = src
-    s = swap(s, "<title>Magann Family Showtimes</title>", f"<title>{family} Family Showtimes</title>")
-    s = swap(s, '<meta property="og:title" content="Magann Family Showtimes">', f'<meta property="og:title" content="{family} Family Showtimes">')
-    s = s.replace("near Oklahoma City", f"near {city}")
-    s = swap(s, '<b id="fam">Magann</b>', f'<b id="fam">{family}</b>')
+    s = swap(s, "near Oklahoma City", f"near {city}")
+    s = swap(s, "Created by Richard Magann.\">", f"Created by Richard Magann for {made_for}.\">")
+    s = swap(s, '<span id="madefor"></span>', f'<span id="madefor"> for {made_for}</span>')
     s = swap(s, 'get("city")||"okc")', f'get("city")||"{cid}")')
     out = root / cid / "index.html"
     out.parent.mkdir(exist_ok=True)
