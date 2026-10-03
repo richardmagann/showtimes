@@ -48,6 +48,9 @@ header.top .who{grid-column:1/-1;margin-top:8px;order:9}
 .who{display:grid;grid-template-columns:1fr 1fr;background:var(--chip);border-radius:999px;padding:3px;gap:3px}
 .who button{border:0;background:transparent;color:var(--fg);font:inherit;font-weight:700;font-size:.95rem;padding:9px 6px;border-radius:999px;cursor:pointer}
 .who button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.clearbtn{flex:none;border:0;background:var(--accent);color:#fff;border-radius:999px;padding:7px 14px;font:inherit;font-weight:700;font-size:.88rem;cursor:pointer;white-space:nowrap}
+.clearbtn.big{margin-top:12px;font-size:1rem;padding:10px 20px}
+.panel .pfoot{gap:8px}
 .linkbtn{border:0;background:none;padding:0;font:inherit;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline}
 .whoask-bg{position:fixed;inset:0;z-index:60;background:rgba(10,8,12,.72);display:grid;place-items:center;padding:16px}
 .whoask{background:var(--surface);color:var(--fg);border-radius:16px;padding:22px 18px 16px;width:100%;max-width:400px;display:grid;gap:12px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)}
@@ -80,10 +83,11 @@ button.day b{display:block;font-weight:700;font-size:.95rem}
 button.day small{font-size:.72rem;color:var(--muted)}
 button.day[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 button.day[aria-pressed="true"] small{color:var(--bg);opacity:.8}
-.filterline{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.bar>*{min-width:0}
+.filterline{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
 button.fbtn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;font-weight:700;font-size:.85rem;cursor:pointer}
 button.fbtn[aria-expanded="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
-.fsum{font-size:.82rem;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fsum{flex:1;font-size:.82rem;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Filter panel */
 .panel{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:12px 12px 0;display:grid;gap:12px;max-height:62vh;max-height:calc(100dvh - 210px);overflow:auto;overscroll-behavior:contain}
@@ -282,6 +286,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
   <div class="row" id="relkinds" role="group" aria-label="What to show" hidden></div>
   <div class="filterline" id="filterline">
     <span class="fsum" id="fsum"></span>
+    <button class="clearbtn" id="clearbtn" hidden>Clear filters</button>
     <button class="fbtn" id="fbtn" aria-expanded="false" aria-controls="panel">Filters</button>
   </div>
   <div class="panel" id="panel" hidden>
@@ -300,7 +305,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
       <label class="check" for="keepsp"><input type="checkbox" id="keepsp" checked> Always show unrated special events</label>
       <label class="check" for="hidepast"><input type="checkbox" id="hidepast" checked> Hide showtimes that have started</label>
     </div>
-    <div class="pfoot"><button class="done" id="done">Done</button></div>
+    <div class="pfoot"><button class="clearbtn" id="clearbtn2">Clear filters</button><button class="done" id="done">Done</button></div>
   </div>
 </div>
 
@@ -459,6 +464,15 @@ function defaultDay(){
   if(ahead[0]===today && remainingCount(today)===0 && ahead[1]) return ahead[1];
   return ahead[0];
 }
+// Anything that narrows the list beyond the Family / Grown-ups choice.
+function filtersActive(){ return S.type!=="all" || S.mc>0 || S.age<99 || S.th!=="all" || S.after>0 || S.osc || S.who==="custom" || !!S.focus || S.showNR; }
+function clearFilters(){
+  Object.assign(S,{type:"all",mc:0,age:99,th:"all",after:0,osc:false,keepsp:true,hidepast:true,focus:null});
+  setWho(S.who==="grown"?"grown":"family");
+  for(const [id,key] of [["mc","mc"],["age","age"],["after","after"],["th","th"]]) $(id).value=S[key];
+  for(const id of ["osc","keepsp","hidepast"]) $(id).checked=S[id];
+  render(); window.scrollTo({top:0});
+}
 function filterSummary(){
   const rs=[...S.ratings].sort((a,b)=>RATINGS.indexOf(a)-RATINGS.indexOf(b)).join(", ")||"No ratings";
   const parts=[S.who==="family" ? `Family: ${rs}` : S.who==="grown" ? "All ratings" : rs];
@@ -477,6 +491,7 @@ function render(){
   if(!S.day) S.day = defaultDay();
   for(const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.mode===S.mode);
   $("days").hidden = S.mode!=="show" || !!S.focus;
+  pills($("days"), DAYS.filter(d=>d>=todayStr()||d===DAYS[DAYS.length-1]).map(d=>{const l=dayLabel(d);return [d,`<b>${l.w}</b><small>${l.md}</small>`];}), v=>v===S.day, v=>{S.day=v;S.focus=null;}, "day");
   for(const b of document.querySelectorAll("#who button")) b.setAttribute("aria-pressed", b.dataset.who===S.who);
   const soon = S.mode==="soon";
   $("relkinds").hidden = !soon;
@@ -488,6 +503,7 @@ function render(){
   $("viewbox").hidden = S.mode!=="show";
   $("mcv").textContent=S.mc?S.mc+"+":"any";
   $("fsum").textContent=filterSummary();
+  $("clearbtn").hidden=!filtersActive();
   save();
   if(S.mode==="soon"){ $("focusbar").hidden=true; renderSoon(); return; }
   renderShows();
@@ -506,7 +522,7 @@ function renderShows(){
   let nrHid=0;
   if(S.who==="family" && !S.showNR && !S.focus){ const hid=new Set(); for(const s of DATA.shows){ if(!(spec||s[1]===S.day) || !theaterOK(s[0])) continue; const m=DATA.movies[s[2]]; if((!m.r||m.r==="NR") && (!spec||m.sp) && !famOK({csm:m.csm,g:m.g,sp:m.sp,fam:m.fam})) hid.add(s[2]); } nrHid=hid.size; }
   $("count").innerHTML = (rows.length ? (spec?"Special showings, all week · ":"")+`${films.size} movie${films.size>1?"s":""} · ${rows.length} showtimes · ${ths.size} theater${ths.size>1?"s":""}` : "") + (nrHid?`${rows.length?" · ":""}${nrHid} unrated hidden in Family Mode <button class="linkbtn" data-shownr>Show</button>`:"");
-  if(!rows.length){ out.innerHTML=`<div class="empty">Nothing matches. Try another day, add a rating, or loosen the filters.</div>`; return; }
+  if(!rows.length){ out.innerHTML=`<div class="empty">Nothing matches. Try another day${filtersActive()?`, or clear your filters.<br><button class="clearbtn big" data-clear>Clear filters</button>`:(S.who==="family"?", or switch to Grown-ups at the top.":".")}</div>`; return; }
 
   let html="";
   if(spec||S.focus){
@@ -774,6 +790,8 @@ bind("mc","mc",Number); bind("age","age",Number); bind("th","th",String); bind("
 bind("osc","osc"); bind("keepsp","keepsp"); bind("hidepast","hidepast");
 if(DATA.updated){ const u=new Date(DATA.updated); $("fresh").textContent=`Updated ${u.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}, ${u.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} · through ${dayLabel(DAYS[DAYS.length-1]).w} ${dayLabel(DAYS[DAYS.length-1]).md}`; }
 $("who").addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); render();});
+$("clearbtn").onclick=clearFilters; $("clearbtn2").onclick=clearFilters;
+$("out").addEventListener("click",e=>{ if(e.target.closest("[data-clear]")) clearFilters(); });
 $("count").addEventListener("click",e=>{ if(e.target.closest("[data-shownr]")){ S.showNR=true; render(); } });
 let who=null; try{ who=sessionStorage.getItem("mfs-who-"+CITY); }catch(e){}
 if(who==="family"||who==="grown"){ setWho(who); render(); maybeTour(); }
