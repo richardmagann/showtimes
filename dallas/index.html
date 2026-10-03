@@ -101,6 +101,8 @@ button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-col
 .pgrid label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
 .pgrid select,.pgrid input[type=range]{width:100%;font:inherit;color:var(--fg)}
 .pgrid select{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px}
+.pgrid label .q{color:var(--fg);font-weight:700;font-size:.92rem}
+.check small{display:block;color:var(--muted);font-size:.78rem}
 .check{display:flex!important;align-items:center;gap:8px;color:var(--fg)!important;font-size:.9rem!important}
 .pfoot{display:flex;justify-content:flex-end}
 button.done{border:0;background:var(--accent);color:#fff;border-radius:999px;padding:7px 18px;font-weight:700;cursor:pointer}
@@ -113,10 +115,13 @@ button.done{border:0;background:var(--accent);color:#fff;border-radius:999px;pad
 
 /* Specials strip */
 .strip{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--accent)}
-.strip h3{margin:0 0 8px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.strip h3{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:0 0 8px;font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .strip .scroll{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .strip .scroll::-webkit-scrollbar{display:none}
-button.spcard{flex:none;max-width:220px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer}
+.strip h3 .more{letter-spacing:0;text-transform:none;font-weight:700}
+.strip.many .scroll{-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent);padding-right:36px}
+.strip.many button.spcard{flex:0 0 70%}
+button.spcard{flex:none;max-width:240px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer}
 button.spcard b{display:block;font-size:.9rem;line-height:1.25}
 button.spcard small{display:block;font-size:.75rem;color:var(--muted);margin-top:3px}
 
@@ -146,7 +151,7 @@ button.ttl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .sc{display:grid;place-items:center;align-content:center;width:64px;height:50px;border-radius:8px;font-family:var(--mono);font-size:1.05rem;line-height:1.05;text-decoration:none;color:#fff}
 .sc small{font-family:var(--body);font-size:.62rem;font-weight:600;opacity:.95;margin-top:3px}
 .sc.g{background:var(--good)} .sc.m{background:var(--mid)} .sc.b{background:var(--bad)}
-.sc.na{background:var(--chip);color:var(--muted)}
+.sc.na{background:var(--chip);color:var(--muted);font-size:.82rem}
 .sc.age{background:var(--surface);color:var(--fg);border:1px solid var(--line)}
 .tline{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .where{flex-basis:100%;font-size:.85rem;font-weight:700;color:var(--fg);margin-top:2px}
@@ -156,6 +161,7 @@ button.ttl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .t em{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:700;color:var(--accent);margin-left:5px;text-transform:uppercase}
 .t.past{opacity:.38;text-decoration:line-through}
 details.cred summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600}
+.credits .syn{margin:0 0 4px;line-height:1.45}
 .credits{font-size:.9rem;display:grid;gap:3px;padding-top:6px}
 .credits b{font-weight:600;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
 .note{font-size:.85rem;color:var(--muted);font-style:italic}
@@ -166,6 +172,8 @@ details.cred summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-we
 /* Calendar (special events, months ahead) */
 .month{margin-top:24px}
 .month h2{font-family:var(--display);font-weight:800;font-size:1.6rem;text-transform:uppercase;letter-spacing:.02em;margin:0 0 4px}
+.wk>.dayhd{position:sticky;top:calc(var(--barh,150px) + env(safe-area-inset-top,0px) - 1px);z-index:3;font-size:1.05rem;padding:8px 12px;box-shadow:0 2px 6px rgba(0,0,0,.18)}
+.wk>.dayhd small{margin-left:auto;font-weight:600;opacity:.85;font-size:.82rem}
 .dayhd{display:flex;align-items:baseline;gap:8px;margin-top:16px;padding:6px 10px;background:var(--fg);color:var(--bg);border-radius:8px;font-weight:700;font-size:.95rem}
 .dayhd small{font-weight:400;opacity:.75;font-size:.8rem}
 .ev{padding:12px 2px 14px;border-bottom:1px solid var(--line)}
@@ -185,6 +193,7 @@ details.cred summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-we
 a.evt{color:inherit;text-decoration:none}
 a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 /* New movies (upcoming releases) */
+#relkinds{flex-wrap:wrap;justify-content:center;overflow:visible}
 #relkinds .pill{white-space:nowrap;font-size:.84rem;padding-inline:11px}
 .rel{border-bottom:1px solid var(--line)}
 .rel summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:10px 2px;cursor:pointer;list-style:none}
@@ -192,6 +201,10 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .rel summary{position:relative;padding-right:24px}
 .rel summary::after{content:"+";position:absolute;right:4px;top:10px;color:var(--muted);font-weight:700}
 .rel[open] summary::after{content:"\2212"}
+.rel .yr{color:var(--muted)}
+.rel .evsum{flex-basis:100%;color:var(--muted);font-size:.84rem}
+.relbody .evwhere{margin-top:2px}
+.relbody .evday{margin-top:6px}
 .rel .rt{font-weight:700;font-size:1.02rem;line-height:1.3}
 .relbody{display:grid;gap:5px;padding:0 2px 14px;font-size:.92rem}
 .relbody p{margin:0;line-height:1.45}
@@ -200,7 +213,7 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .relbody .thin{color:var(--muted);font-style:italic}
 .relbody .links{margin-top:2px}
 .subhd{margin-top:14px;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
-.evday{margin-top:10px;font-weight:700;font-size:.9rem;color:var(--muted)}
+.evday{margin-top:10px;font-weight:700;font-size:.9rem;color:var(--fg)}
 .trlrow{font-size:.88rem;margin-top:2px}
 a.trl{color:var(--accent);font-weight:700;text-decoration:none;white-space:nowrap}
 a.trl:hover,a.trl:focus-visible{text-decoration:underline}
@@ -306,15 +319,15 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
     <div><h4>Type</h4><div class="chips" id="types"></div></div>
     <div id="viewbox"><h4>Group by</h4><div class="chips" id="views"></div></div>
     <div class="pgrid">
-      <label for="mc">Minimum Metacritic: <strong id="mcv">any</strong><input type="range" id="mc" min="0" max="90" step="5" value="0"></label>
-      <label for="age">Common Sense age, at most
-        <select id="age"><option value="99">Any age</option><option value="6">6+</option><option value="8">8+</option><option value="10">10+</option><option value="12">12+</option><option value="13">13+</option></select></label>
+      <label for="mc"><span class="q">Is it any good?</span><span>Minimum critics' score (Metacritic, out of 100): <strong id="mcv">any</strong></span><input type="range" id="mc" min="0" max="90" step="5" value="0"></label>
+      <label for="age"><span class="q">Right for my kids?</span><span>Only show movies Common Sense Media says are OK for a child this age</span>
+        <select id="age"><option value="99">Show everything</option><option value="2">2 years old</option><option value="4">4 years old</option><option value="6">6 years old</option><option value="8">8 years old</option><option value="10">10 years old</option><option value="12">12 years old</option><option value="13">13 years old</option></select></label>
       <label for="th">Theaters
-        <select id="th"><option value="all">Favorites + nearby</option><option value="fav">Favorites only</option><option value="10">Favorites + within 10 miles</option></select></label>
+        <select id="th"><option value="all">All theaters on this page</option><option value="fav">Only my numbered favorites</option></select></label>
       <label for="after">Starts at or after
-        <select id="after"><option value="0">Any time</option><option value="12">Noon</option><option value="16">4 PM</option><option value="18">6 PM</option></select></label>
+        <select id="after"><option value="0">Any time</option><option value="12">Noon</option><option value="16">4 PM</option><option value="18">6 PM</option><option value="20">8 PM</option></select></label>
       <label class="check" for="osc"><input type="checkbox" id="osc"> Oscar-nominated only</label>
-      <label class="check" for="keepsp"><input type="checkbox" id="keepsp" checked> Always show unrated special events</label>
+      <label class="check" for="keepsp"><input type="checkbox" id="keepsp" checked> <span>Always show unrated special events <small>Things with no rating, like opera broadcasts, concerts and old classics. Only matters when you pick ratings yourself.</small></span></label>
       <label class="check" for="hidepast"><input type="checkbox" id="hidepast" checked> Hide showtimes that have started</label>
     </div>
     <div class="pfoot"><button class="clearbtn" id="clearbtn2">Clear filters</button><button class="done" id="done">Done</button></div>
@@ -354,8 +367,8 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
     <fieldset class="rqrates"><legend>What counts as Family Mode for you? <small>Most families pick G and PG. Grown-Up Mode always shows everything.</small></legend>
       <div class="chips" id="rq-rates"><button type="button" class="pill" aria-pressed="true" data-r="G">G</button><button type="button" class="pill" aria-pressed="true" data-r="PG">PG</button><button type="button" class="pill" aria-pressed="false" data-r="PG-13">PG-13</button><button type="button" class="pill" aria-pressed="false" data-r="R">R</button><button type="button" class="pill" aria-pressed="false" data-r="NR">NR</button></div>
     </fieldset>
-    <label for="rq-home">Nearest cross streets <small>Optional. Used only to work out miles to each theater; never shown.</small><input id="rq-home" maxlength="120" placeholder="Colfax &amp; York"></label>
-    <label for="rq-notes">Anything else <small>Optional</small><textarea id="rq-notes" maxlength="1000"></textarea></label>
+    <label for="rq-home">Nearest cross streets <small>Optional. Two street names with "&amp;" between them, like the example. Used only to work out miles to each theater; never shown.</small><input id="rq-home" maxlength="120" placeholder="N May Ave &amp; W Memorial Rd" autocomplete="off"></label>
+    <label for="rq-notes">Anything else? <small>Optional. For example: a theater to leave off, your kids' ages, or the best way to send you the link. Richard reads every note and sets your page up to match.</small><textarea id="rq-notes" maxlength="1000"></textarea></label>
     <div class="hp" aria-hidden="true"><label for="rq-web">Website<input id="rq-web" tabindex="-1" autocomplete="off"></label></div>
     <div class="err" id="rq-err" role="alert"></div>
     <div class="acts"><button type="button" id="rq-cancel">Cancel</button><button type="submit" class="primary" id="rq-send">Send request</button></div>
@@ -384,12 +397,13 @@ async function fetchData(){
   const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name,default_ratings,made_for`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
   if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
   const ids=ct.map(r=>r.theaters.id);
-  const [shows, events, log, rels, dets] = await Promise.all([
+  const [shows, events, log, rels, dets, finfo] = await Promise.all([
     sb(`showtimes?select=theater_id,movie_id,show_date,start_time,format&theater_id=in.(${ids.join(",")})&show_date=gte.${ymd}&order=show_date,start_time`, true),
     sb(`events?select=*&event_date=gte.${ymd}&or=(city_id.eq.${CITY},city_id.is.null)&order=event_date,title`, true),
     sb(`refresh_log?select=finished_at&city_id=eq.${CITY}&status=eq.ok&order=finished_at.desc&limit=1`),
     sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[]),
-    sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[])
+    sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[]),
+    sb(`fandango_info?select=url,synopsis,trailer_url`, true).catch(()=>[])
   ]);
   const mids=[...new Set(shows.map(s=>s.movie_id))];
   const movies=[];
@@ -404,6 +418,9 @@ async function fetchData(){
     const row=[s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]; seenShow.set(k,row); D.shows.push(row); }
   for(const e of events) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times});
   const detBy=new Map(dets.map(x=>[x.source_url,x]));
+  const fi=new Map(finfo.map(x=>[x.url,x]));
+  for(const id in D.movies){ const x=fi.get(D.movies[id].fd); if(x){ D.movies[id].syn=x.synopsis; D.movies[id].tr=x.trailer_url; } }
+  for(const e of D.calendar){ const x=fi.get(e.src); if(x){ e.syn=x.synopsis; e.tr=x.trailer_url; } }
   D.releases=rels.map(r=>({det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
   return D;
 }
@@ -414,7 +431,7 @@ const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:
 const $=id=>document.getElementById(id);
 
 const PREF_KEY="mfs2-"+CITY;
-function load(){ S.ratings=new Set(DATA.defaultRatings); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ Object.assign(S,v,{ratings:new Set(v.ratings||DATA.defaultRatings),mode:"show",focus:null,day:null,who:"family",showNR:false}); } }catch(e){} }
+function load(){ S.ratings=new Set(DATA.defaultRatings); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ Object.assign(S,v,{ratings:new Set(v.ratings||DATA.defaultRatings),mode:"show",focus:null,day:null,who:"family",showNR:false}); if(S.th!=="fav") S.th="all"; } }catch(e){} }
 function save(){ try{ localStorage.setItem(PREF_KEY, JSON.stringify({...S, ratings:[...S.ratings], day:null, focus:null, mode:"show"})); }catch(e){} }
 
 const pad=n=>String(n).padStart(2,"0");
@@ -465,7 +482,7 @@ function movieOK(m, specialsMode){
   if(S.age<99 && m.csm!=null && m.csm>S.age) return false;
   return true;
 }
-function theaterOK(id){const t=DATA.theaters[id]; if(S.th==="fav") return t.rank!=null; if(S.th==="10") return t.rank!=null || t.mi<=10; /* ranked favorites always count, however far */ return true;}
+function theaterOK(id){const t=DATA.theaters[id]; if(S.th==="fav") return t.rank!=null; return true;}
 
 function remainingCount(day){
   const today=todayStr(), now=new Date(), nowMin=now.getHours()*60+now.getMinutes();
@@ -494,8 +511,8 @@ function filterSummary(){
   if(S.type!=="all") parts.push(S.type==="anim"?"Animated":"Live action");
   if(S.mode==="show") parts.push(S.view==="theater"?"By theater":"By movie");
   if(S.mc) parts.push("Meta "+S.mc+"+");
-  if(S.age<99) parts.push("Ages ≤"+S.age);
-  if(S.th!=="all") parts.push(S.th==="fav"?"Favorites only":"Favorites + ≤10 mi");
+  if(S.age<99) parts.push("OK for age "+S.age);
+  if(S.th!=="all") parts.push("Favorites only");
   if(S.after) parts.push("After "+fmt(S.after*60));
   if(S.osc) parts.push("Oscar only");
   return parts.join(" · ");
@@ -517,6 +534,7 @@ function render(){
   $("viewbox").hidden = S.mode!=="show";
   $("mcv").textContent=S.mc?S.mc+"+":"any";
   $("fsum").textContent=filterSummary();
+  requestAnimationFrame(()=>document.documentElement.style.setProperty("--barh", document.querySelector(".bar").offsetHeight+"px"));
   $("clearbtn").hidden=!filtersActive();
   save();
   if(S.mode==="soon"){ $("focusbar").hidden=true; renderSoon(); return; }
@@ -552,7 +570,7 @@ function renderShows(){
   // Specials strip for the selected day
   const spm=[...films].filter(id=>DATA.movies[id].sp).sort(byScore);
   if(spm.length){
-    html+=`<div class="strip"><h3>★ Special showings ${S.day===today?"today":"on "+dayLabel(S.day).w}</h3><div class="scroll">`+
+    html+=`<div class="strip${spm.length>1?" many":""}"><h3>★ Special showings ${S.day===today?"today, ":"on "}${dayLabel(S.day).w} ${dayLabel(S.day).md}${spm.length>1?`<span class="more">${spm.length} showings · swipe ›</span>`:""}</h3><div class="scroll">`+
       spm.map(id=>{const m=DATA.movies[id]; const r=rows.filter(x=>x.m===id); const th=[...new Set(r.map(x=>DATA.theaters[x.th].short))]; const first=r.map(x=>toMin(x.t)).sort((a,b)=>a-b)[0];
         return `<button class="spcard" data-focus="${id}"><b>${esc(m.t)}</b><small>${esc(m.sp)} · ${esc(m.r)}</small><small>${th.length>1?th.length+" theaters":esc(th[0])} · from ${fmt(first)}</small></button>`;}).join("")+`</div></div>`;
   }
@@ -589,7 +607,7 @@ function relRow(r, tagHtml, dayHtml){
     ${(d.stars||[]).length?`<div><b>Starring</b>${nameLinks(d.stars)}</div>`:""}
     ${r.dist?`<div><b>Studio</b>${esc(r.dist)}</div>`:""}
     ${thin?`<div class="thin">Not much has been announced yet. More will appear here as the release gets closer.</div>`:""}
-    <div class="links">${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailer(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(r.src)}" target="_blank" rel="noopener">More at The Numbers</a></div></div></details>`;
+    <div class="links">${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailer(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${imdbLink(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">More on IMDb</a></div></div></details>`;
 }
 // Coming soon: new movies by opening week, plus special events at this family's theaters, in one list.
 function renderSoon(){
@@ -625,24 +643,34 @@ function renderSoon(){
   const order=t=>{const i=FAV_ORDER.indexOf(t);return i<0?99:i;};
   const tagCls=s=>/ghibli/i.test(s)?"ghibli":/fathom|met opera/i.test(s)?"fathom":/concert|live/i.test(s)?"live":"";
   const dayTxt=d=>new Date(d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  const thisFri=friOf(today); const howFar=fri=>{ const days=Math.round((fri-thisFri)/86400000); const w=Math.round(days/7); if(w<=0) return "this week"; if(w===1) return "next week"; if(w<=10) return `in ${w} weeks`; const mo=Math.round(days/30.4); return mo<12?`in about ${mo} months`:mo<18?"in about a year":`in about ${Math.round(mo/12*2)/2} years`; };
+  const dayShort=d=>new Date(d+"T12:00").toLocaleDateString("en-US",{weekday:"short"});
   let html="", curM="";
   for(const g of [...groups.values()].sort((a,b)=>a.sortKey.localeCompare(b.sortKey))){
     if(g.month!==curM){ if(curM) html+="</section>"; html+=`<section class="month"><h2>${g.month}</h2>`; curM=g.month; }
-    html+= g.lbl ? `<div class="dayhd">${esc(g.lbl)} <small>date not set</small></div>` : `<div class="dayhd">Week of ${g.fri.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>`;
+    html+=`<div class="wk">`+( g.lbl ? `<div class="dayhd">${esc(g.lbl)} <small>date not set</small></div>` : `<div class="dayhd">Week of ${g.fri.toLocaleDateString("en-US",{month:"short",day:"numeric"})}${g.fri.getFullYear()!==THIS_YEAR?", "+g.fri.getFullYear():""} <small>${howFar(g.fri)}</small></div>`);
     for(const r of g.movies.sort((a,b)=>ko[a.k]-ko[b.k]||a.d.localeCompare(b.d)||a.t.localeCompare(b.t))){
       const day=(!g.lbl && new Date(r.d+"T12:00").getDay()!==5)?`<span class="relday">${dayTxt(r.d)}</span>`:"";
       html+=relRow(r, tag(r), day);
     }
     if(g.events.length){
       if(g.movies.length) html+=`<div class="subhd">★ Special events this week</div>`;
-      let curD="";
-      for(const e of g.events.sort((a,b)=>a.d.localeCompare(b.d)||a.t.localeCompare(b.t))){
-        if(e.d!==curD){ html+=`<div class="evday">${dayTxt(e.d)}</div>`; curD=e.d; }
-        const rows = e.th.length ? e.th.slice().sort((a,b)=>order(a[0])-order(b[0])).map(([tid,ts])=>{const th=DATA.theaters[tid]; return `<span class="nm">${esc(th?th.short:tid)}${th?` <small>${th.mi} mi</small>`:""}</span><span class="tm">${ts.map(s=>fmt(toMin(s))).join("  ")||"see link"}</span>`;}).join("") : `<span class="na">${esc(e.where||"")}</span>`;
-        html+=`<div class="ev"><h3><a class="evt" href="${url(e.src)}" target="_blank" rel="noopener">${esc(e.t)}</a>${e.y&&e.y<THIS_YEAR?` <span class="yr">(${esc(e.y)})</span>`:""}</h3>
-          <div class="meta2"><span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}</div><div class="evwhere">${rows}</div></div>`;
+      // One row per film for the week, however many days and theaters it plays; tap to see the schedule.
+      const byFilm=new Map();
+      for(const e of g.events.sort((a,b)=>a.d.localeCompare(b.d))){ const k=e.t+"|"+(e.y||""); if(!byFilm.has(k)) byFilm.set(k,[]); byFilm.get(k).push(e); }
+      for(const list of [...byFilm.values()].sort((a,b)=>a[0].d.localeCompare(b[0].d)||a[0].t.localeCompare(b[0].t))){
+        const e=list[0]; const days=[...new Set(list.map(x=>x.d))]; const ths=new Set(list.flatMap(x=>x.th.map(t=>t[0])));
+        const when=days.length===1?dayTxt(days[0]):days.length<=4?days.map(dayShort).join(", "):`${days.length} days, ${dayShort(days[0])} to ${dayShort(days[days.length-1])}`;
+        const sched=list.map(x=>{ const rows=x.th.length ? x.th.slice().sort((a,b)=>order(a[0])-order(b[0])).map(([tid,ts])=>{const th=DATA.theaters[tid]; return `<span class="nm">${esc(th?th.short:tid)}${th?` <small>${th.mi} mi</small>`:""}</span><span class="tm">${ts.map(s=>fmt(toMin(s))).join("  ")||"see link"}</span>`;}).join("") : `<span class="na">${esc(x.where||"")}</span>`;
+          return `<div class="evday">${dayTxt(x.d)}</div><div class="evwhere">${rows}</div>`; }).join("");
+        const plain=plainTitle(e.t); const noTrailer=/concert|met opera|mystery/i.test(e.series||"");
+        html+=`<details class="rel"><summary><span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
+          ${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
+          ${sched}
+          <div class="links">${noTrailer?"":`<a class="trl" href="${e.tr?url(e.tr):trailer(plain,e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a>${/concert|met opera|mystery|fan event|special event/i.test(e.series||"")?"":`<a href="${streamLink(plain)}" target="_blank" rel="noopener">Can I stream it at home?</a>`}</div></div></details>`;
       }
     }
+    html+=`</div>`;
   }
   if(curM) html+="</section>";
   if(parts.length) html+=`<p class="calnote">New movies open on the Friday of the week shown unless a day is noted. Opening dates are for the U.S. and come from The Numbers; studios move them often, especially far out. Limited releases open in a few cities first and may reach ${esc(DATA.cityName||"your city")} later or not at all. Special events are at your theaters; chains post most of them 3 to 10 weeks ahead, so later months fill in over time.</p>`;
@@ -650,28 +678,36 @@ function renderSoon(){
 }
 
 // No trailer database needed: a YouTube search for the title lands on the official trailer.
-function trailer(title, year){ return "https://www.youtube.com/results?search_query="+encodeURIComponent(title+(year?" "+year:"")+" trailer"); }
+// Fallback when we don't have a film's own trailer page: a YouTube search worded to put the official trailer first.
+function trailer(title, year){ return "https://www.youtube.com/results?search_query="+encodeURIComponent(title+(year?" "+year:"")+" official trailer"); }
+const streamLink=t=>"https://reelgood.com/search?q="+encodeURIComponent(t);
+const imdbLink=(t,y)=>"https://www.imdb.com/find/?s=tt&q="+encodeURIComponent(t+(y?" "+y:""));
+// Strip event wording so a search finds the film itself ("Rocky 50th Anniversary" -> "Rocky").
+const plainTitle=t=>t.replace(/\s*[-–:]?\s*\(?\d+(st|nd|rd|th)\s+anniversary.*$/i,"").replace(/(\s*\([^)]*\))+\s*$/,"").replace(/\s*[-–:]\s*(encore|re-?release|fan event|early access).*$/i,"").trim();
 function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
 function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
 function filmBlock(mid, groups){
   const m=DATA.movies[mid];
   const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m`:"runtime TBA", m.anim===true?"Animated":m.anim===false?"Live action":null].filter(Boolean).join(" · ");
   const badges=m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"";
-  const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">–<small>Metacritic</small></span>`;
-  const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">–<small>Ages</small></span>`;
+  const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Metacritic</small></span>`;
+  const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
     const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>ends ~${fmt(Math.round((s+m.rt+20)/5)*5)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${esc(r.fmt)}</em>`:""}</span>`;}).join("");
     return `<div class="tline">${tid?`<span class="where">${esc(DATA.theaters[tid].short)} <small>${DATA.theaters[tid].mi} mi</small></span>`:""}${chips}</div>`;
   }).join("");
   const hasCred=m.dir.length||m.wr.length||m.st.length;
-  const credits = hasCred ? `<details class="cred"><summary>Director, writers, cast</summary><div class="credits">
+  const older=m.sp || (m.y && m.y<THIS_YEAR);
+  const links=`<div class="links">${older && m.sp!=="Mystery screening"?`<a href="${streamLink(plainTitle(m.t))}" target="_blank" rel="noopener">Can I stream it at home?</a>`:""}${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
+  const credits = (hasCred||m.syn) ? `<details class="cred"><summary>${m.syn?"What it's about, cast and crew":"Director, writers, cast"}</summary><div class="credits">
+     ${m.syn?`<p class="syn">${esc(m.syn)}</p>`:""}
      ${m.dir.length?`<div><b>Director</b>${people(m.dir)}</div>`:""}
      ${m.wr.length?`<div><b>Writers</b>${people(m.wr)}</div>`:""}
      ${m.st.length?`<div><b>Starring</b>${people(m.st)}</div>`:""}
-     <div class="links">${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div></div></details>`
-     : `<div class="links"><a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
+     ${links}</div></details>`
+     : links;
   const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
-  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailer(m.t,m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${m.tr?url(m.tr):trailer(plainTitle(m.t),m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
@@ -679,12 +715,12 @@ function filmBlock(mid, groups){
 const TOUR=[
   {center:true, next:"Take the tour", title:"Rich's One-Stop Showtimes", text:"<i class='tagline'>Going to the movies really shouldn't be this hard.</i>Every movie at your favorite theaters on one page, filtered to the ratings you want (e.g., PG only), with critics' scores, age guides, trailers, and the time you'll walk out.<br><br>Richard built this because he was sick of checking five different sites to answer three questions: Is it any good? Is it right for kids of different ages? Is it playing at a good theater?<br><br>Built for families, but adaptable to everyone.<span class='madeby'>Created by Richard Magann</span>"},
   {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows G and PG movies, plus unrated ones that look family-friendly. <b>Grown-ups</b> shows everything. Switch any time."},
-  {sel:".tabs", title:"Three tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>★ Specials</b>: this week's can't-miss one-off and classic screenings. Think Rocky's 50th anniversary!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead."},
+  {sel:".tabs", title:"Three tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>★ Specials</b>: this week's can't-miss one-off and classic screenings. Think Back to the Future on the big screen again!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
   {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Your choices are remembered on this device."},
-  {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie."},
+  {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie, today and on the days ahead."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
-  {sel:"#relkinds", mode:"soon", title:"Coming soon: choose what to see", text:"This tab looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
+  {sel:"#relkinds", sel2:"#tab-soon", mode:"soon", title:"Coming soon: choose what to see", text:"You're now on the <b>Coming soon</b> tab, which looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
   {sel:"#tourbtn", title:"Want this for your city?", text:"Request your own page, set up with your favorite theaters and ratings. Fill out a short form and Richard will make it happen!<br><br>Tap ? any time to see this tour again.", cta:true}
 ];
 let tourEls=null, tourI=0;
@@ -698,7 +734,9 @@ function placeTour(){
   const [ring,card]=tourEls;
   ring.hidden=!!st.center; tourEls[2].classList.toggle("dim",!!st.center);
   if(st.center){ card.style.top=Math.max(8,(window.innerHeight-card.offsetHeight)/2)+"px"; return; }
-  const el=document.querySelector(st.sel); if(!el) return; const r=el.getBoundingClientRect(); const pad=6;
+  const el=document.querySelector(st.sel); if(!el) return; let r=el.getBoundingClientRect(); const pad=6;
+  const el2=st.sel2&&document.querySelector(st.sel2);
+  if(el2){ const q=el2.getBoundingClientRect(); const top=Math.min(r.top,q.top), left=Math.min(r.left,q.left), right=Math.max(r.right,q.right), bottom=Math.max(r.bottom,q.bottom); r={top,left,right,bottom,width:right-left,height:bottom-top}; }
   Object.assign(ring.style,{top:(r.top-pad)+"px",left:(r.left-pad)+"px",width:(r.width+pad*2)+"px",height:(r.height+pad*2)+"px"});
   const below=r.bottom+pad+12, ch=card.offsetHeight, vh=window.innerHeight;
   card.style.top = (below+ch < vh-8 ? below : Math.max(8, r.top-pad-12-ch)) + "px";
