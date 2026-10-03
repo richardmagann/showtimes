@@ -416,11 +416,11 @@ async function fetchData(){
   for(const s of shows){ if(!D.movies[s.movie_id]) continue; const k=s.theater_id+"|"+s.show_date+"|"+s.movie_id+"|"+s.start_time.slice(0,5); const prev=seenShow.get(k);
     if(prev){ if(!prev[3] && s.format) prev[3]=s.format; continue; }
     const row=[s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]; seenShow.set(k,row); D.shows.push(row); }
-  for(const e of events) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times});
+  for(const e of events) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times,syn:e.summary||null});
   const detBy=new Map(dets.map(x=>[x.source_url,x]));
   const fi=new Map(finfo.map(x=>[x.url,x]));
   for(const id in D.movies){ const x=fi.get(D.movies[id].fd); if(x){ D.movies[id].syn=x.synopsis; D.movies[id].tr=x.trailer_url; } }
-  for(const e of D.calendar){ const x=fi.get(e.src); if(x){ e.syn=x.synopsis; e.tr=x.trailer_url; } }
+  for(const e of D.calendar){ const x=fi.get(e.src); if(x){ e.syn=x.synopsis||e.syn; e.tr=x.trailer_url; } }
   D.releases=rels.map(r=>({det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
   return D;
 }
