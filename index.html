@@ -185,8 +185,19 @@ a.evt{color:inherit;text-decoration:none}
 a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 /* New movies (upcoming releases) */
 #relkinds .pill{white-space:nowrap;font-size:.84rem;padding-inline:11px}
-.rel{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:9px 2px;border-bottom:1px solid var(--line)}
-.rel a.evt{font-weight:700;font-size:1.02rem;line-height:1.3}
+.rel{border-bottom:1px solid var(--line)}
+.rel summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:10px 2px;cursor:pointer;list-style:none}
+.rel summary::-webkit-details-marker{display:none}
+.rel summary{position:relative;padding-right:24px}
+.rel summary::after{content:"+";position:absolute;right:4px;top:10px;color:var(--muted);font-weight:700}
+.rel[open] summary::after{content:"\2212"}
+.rel .rt{font-weight:700;font-size:1.02rem;line-height:1.3}
+.relbody{display:grid;gap:5px;padding:0 2px 14px;font-size:.92rem}
+.relbody p{margin:0;line-height:1.45}
+.relbody .facts{color:var(--muted);font-size:.86rem}
+.relbody b{font-weight:600;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.relbody .thin{color:var(--muted);font-style:italic}
+.relbody .links{margin-top:2px}
 .subhd{margin-top:14px;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .evday{margin-top:10px;font-weight:700;font-size:.9rem;color:var(--muted)}
 .trlrow{font-size:.88rem;margin-top:2px}
@@ -372,11 +383,12 @@ async function fetchData(){
   const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name,default_ratings,made_for`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
   if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
   const ids=ct.map(r=>r.theaters.id);
-  const [shows, events, log, rels] = await Promise.all([
+  const [shows, events, log, rels, dets] = await Promise.all([
     sb(`showtimes?select=theater_id,movie_id,show_date,start_time,format&theater_id=in.(${ids.join(",")})&show_date=gte.${ymd}&order=show_date,start_time`, true),
     sb(`events?select=*&event_date=gte.${ymd}&or=(city_id.eq.${CITY},city_id.is.null)&order=event_date,title`, true),
     sb(`refresh_log?select=finished_at&city_id=eq.${CITY}&status=eq.ok&order=finished_at.desc&limit=1`),
-    sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[])
+    sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[]),
+    sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[])
   ]);
   const mids=[...new Set(shows.map(s=>s.movie_id))];
   const movies=[];
@@ -390,7 +402,8 @@ async function fetchData(){
     if(prev){ if(!prev[3] && s.format) prev[3]=s.format; continue; }
     const row=[s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]; seenShow.set(k,row); D.shows.push(row); }
   for(const e of events) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times});
-  D.releases=rels.map(r=>({d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
+  const detBy=new Map(dets.map(x=>[x.source_url,x]));
+  D.releases=rels.map(r=>({det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
   return D;
 }
 
@@ -561,6 +574,22 @@ function renderShows(){
   out.innerHTML=html;
 }
 
+const wikiName=n=>"https://en.wikipedia.org/wiki/Special:Search?go=Go&search="+encodeURIComponent(n);
+const nameLinks=list=>(list||[]).map(n=>`<a href="${wikiName(n)}" target="_blank" rel="noopener">${esc(n)}</a>`).join(", ");
+// One upcoming film: a one-line row that opens to show what we know about it.
+function relRow(r, tagHtml, dayHtml){
+  const d=r.det||{};
+  const facts=[d.rating?`Rated ${esc(d.rating)}${d.rating_reason?` for ${esc(d.rating_reason)}`:""}`:"Not yet rated", d.runtime_min?`${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m`:null, d.genre?esc(d.genre):null, d.method&&/animation/i.test(d.method)?"Animated":null, d.franchise?`${esc(d.franchise)} series`:null].filter(Boolean).join(" · ");
+  const thin=!d.synopsis && !(d.stars||[]).length && !(d.directors||[]).length;
+  return `<details class="rel"><summary><span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
+    ${d.synopsis?`<p>${esc(d.synopsis)}</p>`:""}
+    <div class="facts">${facts}</div>
+    ${(d.directors||[]).length?`<div><b>Director</b>${nameLinks(d.directors)}</div>`:""}
+    ${(d.stars||[]).length?`<div><b>Starring</b>${nameLinks(d.stars)}</div>`:""}
+    ${r.dist?`<div><b>Studio</b>${esc(r.dist)}</div>`:""}
+    ${thin?`<div class="thin">Not much has been announced yet. More will appear here as the release gets closer.</div>`:""}
+    <div class="links">${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailer(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(r.src)}" target="_blank" rel="noopener">More at The Numbers</a></div></div></details>`;
+}
 // Coming soon: new movies by opening week, plus special events at this family's theaters, in one list.
 function renderSoon(){
   const today=todayStr();
@@ -569,9 +598,14 @@ function renderSoon(){
   const evAll=on("special")?(DATA.calendar||[]).filter(e=>e.d>=today):[];
   const evs=evAll.filter(rateOK), evHidden=evAll.length-evs.length;
   const nrHid=(S.who==="family" && !S.showNR) ? evAll.filter(e=>(!e.r||e.r==="NR") && !rateOK(e)).length : 0;
-  const movies=(DATA.releases||[]).filter(r=>r.d>=today && on(r.k));
+  // Coming films follow the same Family / Grown-ups choice once they have a rating; unrated ones always show.
+  const relOK=r=>{ const d=r.det; if(d && d.rating && !S.ratings.has(d.rating)) return false;
+    if(S.type!=="all"){ if(!d || !d.method) return false; const anim=/animation/i.test(d.method); if((S.type==="anim")!==anim) return false; }
+    return true; };
+  const relAll=(DATA.releases||[]).filter(r=>r.d>=today && on(r.k));
+  const movies=relAll.filter(relOK), relHidden=relAll.length-movies.length;
   const parts=[];
-  if(movies.length) parts.push(`${movies.length} new movies`);
+  if(movies.length||relHidden) parts.push(`${movies.length} new movies`+(relHidden?` (${relHidden} more hidden ${S.who==="family"&&S.type==="all"?"in Family Mode":"by your filters"})`:""));
   if(on("special")) parts.push(`${evs.length} special events`+(evHidden?(S.who==="family"?` (${evHidden} more hidden in Family Mode${nrHid?` · <button class="linkbtn" data-shownr>Show the ${nrHid} unrated</button>`:""})`:` (${evHidden} more hidden by your rating filter)`):""));
   $("count").innerHTML=parts.length?parts.join(" · "):"Pick at least one thing to show above.";
 
@@ -596,7 +630,7 @@ function renderSoon(){
     html+= g.lbl ? `<div class="dayhd">${esc(g.lbl)} <small>date not set</small></div>` : `<div class="dayhd">Week of ${g.fri.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>`;
     for(const r of g.movies.sort((a,b)=>ko[a.k]-ko[b.k]||a.d.localeCompare(b.d)||a.t.localeCompare(b.t))){
       const day=(!g.lbl && new Date(r.d+"T12:00").getDay()!==5)?`<span class="relday">${dayTxt(r.d)}</span>`:"";
-      html+=`<div class="rel"><a class="evt" href="${url(r.src)}" target="_blank" rel="noopener">${esc(r.t)}</a>${tag(r)}${day}${r.dist?`<span class="dist">${esc(r.dist)}</span>`:""}${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailer(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}</div>`;
+      html+=relRow(r, tag(r), day);
     }
     if(g.events.length){
       if(g.movies.length) html+=`<div class="subhd">★ Special events this week</div>`;
@@ -649,11 +683,11 @@ const TOUR=[
   {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Your choices are remembered on this device."},
   {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
-  {sel:"#relkinds", mode:"soon", title:"Coming soon: choose what to see", text:"This tab looks ahead at future dates. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
+  {sel:"#relkinds", mode:"soon", title:"Coming soon: choose what to see", text:"This tab looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
   {sel:"#tourbtn", title:"Want this for your city?", text:"Request your own page, set up with your favorite theaters and ratings. Fill out a short form and Richard will make it happen!<br><br>Tap ? any time to see this tour again.", cta:true}
 ];
 let tourEls=null, tourI=0;
-function tourKey(){ return "mfs-tour-v5"; }
+function tourKey(){ return "mfs-tour-v6"; }
 let tourList=null; // fixed when the tour starts, so switching tabs mid-tour doesn't renumber the steps
 function tourSteps(){ return tourList || TOUR.filter(s=>s.center || s.mode || document.querySelector(s.sel)); }
 function endTour(){ if(!tourEls) return; tourEls.forEach(e=>e.remove()); tourEls=null; tourList=null; if(S.mode!=="show"){ S.mode="show"; render(); window.scrollTo({top:0}); } window.removeEventListener("resize",placeTour); window.removeEventListener("scroll",placeTour,true); try{localStorage.setItem(tourKey(),"1");}catch(e){} }
