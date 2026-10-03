@@ -644,14 +644,14 @@ function filmBlock(mid, groups){
 /* ---------- First-visit tour ---------- */
 const TOUR=[
   {center:true, next:"Take the tour", title:"Rich's One-Stop Showtimes", text:"<i class='tagline'>Going to the movies really shouldn't be this hard.</i>Every movie at your favorite theaters on one page, filtered to the ratings you want (e.g., PG only), with critics' scores, age guides, trailers, and the time you'll walk out.<br><br>Richard built this because he was sick of checking five different sites to answer three questions: Is it any good? Is it right for kids of different ages? Is it playing at a good theater?<br><br>Built for families, but adaptable to everyone.<span class='madeby'>Created by Richard Magann</span>"},
-  {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows G and PG movies, plus unrated ones that look family-friendly: Common Sense Media ages 10 and under, opera broadcasts and most concerts. <b>Grown-ups</b> shows everything. Switch any time."},
-  {sel:".tabs", title:"Three tabs", text:"<b>Showtimes</b>: what's playing, one day at a time.<br><b>★ Specials</b>: one-off and classic screenings at your theaters over the next week or so.<br><b>Coming soon</b>: movies that aren't out yet, plus special events further ahead."},
+  {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows G and PG movies, plus unrated ones that look family-friendly. <b>Grown-ups</b> shows everything. Switch any time."},
+  {sel:".tabs", title:"Three tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>★ Specials</b>: this week's can't-miss one-off and classic screenings. Think Rocky's 50th anniversary!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
   {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Your choices are remembered on this device."},
-  {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Each time shows about when the movie ends, including previews. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie."},
+  {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
-  {sel:"#relkinds", mode:"soon", title:"Coming soon: choose what to see", text:"Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
-  {sel:"#tourbtn", title:"Want this for your city?", text:"Any family can get their own page with their theaters. Tap ? any time to see this tour again.", cta:true}
+  {sel:"#relkinds", mode:"soon", title:"Coming soon: choose what to see", text:"This tab looks ahead at future dates. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
+  {sel:"#tourbtn", title:"Want this for your city?", text:"Request your own page, set up with your favorite theaters and ratings. Fill out a short form and Richard will make it happen!<br><br>Tap ? any time to see this tour again.", cta:true}
 ];
 let tourEls=null, tourI=0;
 function tourKey(){ return "mfs-tour-v5"; }
@@ -805,7 +805,7 @@ function askWho(){
   bg.innerHTML=`<div class="whoask" role="dialog" aria-modal="true" aria-labelledby="whoq"><div class="brand">Rich's <span>One&#8209;Stop Showtimes</span></div><h2 id="whoq">Who's watching?</h2>
     <div class="choices"><button type="button" data-who="family"><b>Family</b><small>${esc(fam)}, plus family-friendly unrated films</small></button>
     <button type="button" data-who="grown"><b>Grown-ups</b><small>Everything, all ratings</small></button></div>
-    <div class="by">You can switch any time at the top of the page. Created by Richard Magann.</div></div>`;
+    <div class="by">You can switch any time at the top of the page.</div></div>`;
   bg.addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); bg.remove(); render(); maybeTour();});
   document.body.appendChild(bg); bg.querySelector("button").focus();
 }
