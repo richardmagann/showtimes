@@ -212,6 +212,10 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .relbody b{font-weight:600;color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
 .relbody .thin{color:var(--muted);font-style:italic}
 .relbody .links{margin-top:2px}
+.home{font-size:.85rem;margin:6px 0 2px;padding:8px 10px;border:1px solid var(--line,rgba(127,127,127,.3));border-radius:10px;display:flex;flex-direction:column;gap:3px}
+.home .homehd{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.home b{font-weight:600;margin-right:4px}
+.home a{align-self:flex-start;padding-block:4px}
 .subhd{margin-top:14px;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
 .evday{margin-top:10px;font-weight:700;font-size:.9rem;color:var(--fg)}
 .trlrow{font-size:.88rem;margin-top:2px}
@@ -341,7 +345,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="addcity"><div><b>Want this for your city?</b><span>Pick your favorite theaters and get your own family page.</span></div><button class="done" id="reqbtn2">Request your city</button></div>
 <div class="foot">
   <div class="copyright"><strong>Rich's One-Stop Showtimes</strong> was created by Richard Magann. © 2026 Richard Magann. All rights reserved.</div>
-  <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Trailers: YouTube. Upcoming release dates: <a href="https://www.the-numbers.com/movies/release-schedule">The Numbers</a>. The Calendar also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
+  <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Trailers: YouTube. Where to watch at home and trailer links: <a href="https://www.themoviedb.org">TMDB</a>, with streaming data from <a href="https://www.justwatch.com">JustWatch</a>. This product uses the TMDB API but is not endorsed or certified by TMDB. Upcoming release dates: <a href="https://www.the-numbers.com/movies/release-schedule">The Numbers</a>. The Calendar also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
   <div><strong>Times.</strong> End times are the start plus the movie's runtime plus about 20 minutes of trailers, rounded to 5 minutes. Theaters vary, so treat them as estimates.</div>
   <div><strong>Distances</strong> are straight-line miles from home, rounded to the nearest mile, not driving miles.</div>
   <div><strong>Oscar notes</strong> and a few classic re-release ratings were added by hand and may be incomplete. Always check the rating with the theater before you buy.</div>
@@ -397,13 +401,14 @@ async function fetchData(){
   const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name,default_ratings,made_for`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
   if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
   const ids=ct.map(r=>r.theaters.id);
-  const [shows, events, log, rels, dets, finfo] = await Promise.all([
+  const [shows, events, log, rels, dets, finfo, tmdb] = await Promise.all([
     sb(`showtimes?select=theater_id,movie_id,show_date,start_time,format&theater_id=in.(${ids.join(",")})&show_date=gte.${ymd}&order=show_date,start_time`, true),
     sb(`events?select=*&event_date=gte.${ymd}&or=(city_id.eq.${CITY},city_id.is.null)&order=event_date,title`, true),
     sb(`refresh_log?select=finished_at&city_id=eq.${CITY}&status=eq.ok&order=finished_at.desc&limit=1`),
     sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[]),
     sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[]),
-    sb(`fandango_info?select=url,synopsis,trailer_url`, true).catch(()=>[])
+    sb(`fandango_info?select=url,synopsis,trailer_url`, true).catch(()=>[]),
+    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url&tmdb_id=not.is.null`, true).catch(()=>[])
   ]);
   const mids=[...new Set(shows.map(s=>s.movie_id))];
   const movies=[];
@@ -421,7 +426,10 @@ async function fetchData(){
   const fi=new Map(finfo.map(x=>[x.url,x]));
   for(const id in D.movies){ const x=fi.get(D.movies[id].fd); if(x){ D.movies[id].syn=x.synopsis; D.movies[id].tr=x.trailer_url; } }
   for(const e of D.calendar){ const x=fi.get(e.src); if(x){ e.syn=x.synopsis||e.syn; e.tr=x.trailer_url; } }
-  D.releases=rels.map(r=>({det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
+  const tm=new Map(tmdb.map(x=>[x.ref,x]));
+  for(const id in D.movies) D.movies[id].tm=tm.get("m:"+id)||null;
+  for(const e of D.calendar) e.tm=tm.get("e:"+e.t)||null;
+  D.releases=rels.map(r=>({tm:tm.get("r:"+r.source_url)||null,det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
   return D;
 }
 
@@ -607,7 +615,7 @@ function relRow(r, tagHtml, dayHtml){
     ${(d.stars||[]).length?`<div><b>Starring</b>${nameLinks(d.stars)}</div>`:""}
     ${r.dist?`<div><b>Studio</b>${esc(r.dist)}</div>`:""}
     ${thin?`<div class="thin">Not much has been announced yet. More will appear here as the release gets closer.</div>`:""}
-    <div class="links">${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailer(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${imdbLink(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">More on IMDb</a></div></div></details>`;
+    <div class="links">${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailerHref(r, r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${imdbLink(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">More on IMDb</a></div></div></details>`;
 }
 // Coming soon: new movies by opening week, plus special events at this family's theaters, in one list.
 function renderSoon(){
@@ -667,7 +675,7 @@ function renderSoon(){
         html+=`<details class="rel"><summary><span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
           ${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
           ${sched}
-          <div class="links">${noTrailer?"":`<a class="trl" href="${e.tr?url(e.tr):trailer(plain,e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a>${/concert|met opera|mystery|fan event|special event/i.test(e.series||"")?"":`<a href="${streamLink(plain)}" target="_blank" rel="noopener">Can I stream it at home?</a>`}</div></div></details>`;
+          <div class="links">${noTrailer?"":`<a class="trl" href="${trailerHref(e, plain, e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a></div>${/concert|met opera|mystery|fan event|special event/i.test(e.series||"")?"":homeHtml(e, plain)}</div></details>`;
       }
     }
     html+=`</div>`;
@@ -680,6 +688,15 @@ function renderSoon(){
 // No trailer database needed: a YouTube search for the title lands on the official trailer.
 // Fallback when we don't have a film's own trailer page: a YouTube search worded to put the official trailer first.
 function trailer(title, year){ return "https://www.youtube.com/results?search_query="+encodeURIComponent(title+(year?" "+year:"")+" official trailer"); }
+/* Exact trailer from TMDB when we have one, then Fandango's trailer page, then a YouTube search. */
+function trailerHref(o, title, year){ const k=o.tm&&o.tm.trailer_key; return k&&/^[\w-]{6,20}$/.test(k) ? "https://www.youtube.com/watch?v="+k : o.tr ? url(o.tr) : trailer(title, year); }
+/* Where a film can be watched at home (U.S.), from TMDB / JustWatch. Falls back to a search link when we have no match. */
+function homeHtml(o, title){
+  const t=o.tm;
+  if(!t) return `<div class="links"><a href="${streamLink(title)}" target="_blank" rel="noopener">Can I stream it at home?</a></div>`;
+  const parts=[t.stream&&t.stream.length?`<span><b>Streaming on</b> ${esc(t.stream.join(", "))}</span>`:"", t.free&&t.free.length?`<span><b>Free</b> ${esc(t.free.join(", "))}</span>`:"", t.rent&&t.rent.length?`<span><b>Rent or buy</b> ${esc(t.rent.join(", "))}</span>`:""].filter(Boolean);
+  return `<div class="home"><div class="homehd">At home</div>${parts.length?parts.join(""):`<span>Not on any streaming or rental service in the U.S. right now.</span>`}${t.watch_url?`<a href="${url(t.watch_url)}" target="_blank" rel="noopener">See all options</a>`:""}</div>`;
+}
 const streamLink=t=>"https://reelgood.com/search?q="+encodeURIComponent(t);
 const imdbLink=(t,y)=>"https://www.imdb.com/find/?s=tt&q="+encodeURIComponent(t+(y?" "+y:""));
 // Strip event wording so a search finds the film itself ("Rocky 50th Anniversary" -> "Rocky").
@@ -698,7 +715,8 @@ function filmBlock(mid, groups){
   }).join("");
   const hasCred=m.dir.length||m.wr.length||m.st.length;
   const older=m.sp || (m.y && m.y<THIS_YEAR);
-  const links=`<div class="links">${older && m.sp!=="Mystery screening"?`<a href="${streamLink(plainTitle(m.t))}" target="_blank" rel="noopener">Can I stream it at home?</a>`:""}${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
+  const home = older && !/mystery|concert|met opera/i.test(m.sp||"") ? homeHtml(m, plainTitle(m.t)) : "";
+  const links=`${home}<div class="links">${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
   const credits = (hasCred||m.syn) ? `<details class="cred"><summary>${m.syn?"What it's about, cast and crew":"Director, writers, cast"}</summary><div class="credits">
      ${m.syn?`<p class="syn">${esc(m.syn)}</p>`:""}
      ${m.dir.length?`<div><b>Director</b>${people(m.dir)}</div>`:""}
@@ -707,7 +725,7 @@ function filmBlock(mid, groups){
      ${links}</div></details>`
      : links;
   const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
-  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${m.tr?url(m.tr):trailer(plainTitle(m.t),m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
