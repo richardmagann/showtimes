@@ -670,11 +670,11 @@ function renderSoon(){
         const when=days.length===1?dayTxt(days[0]):days.length<=4?days.map(dayShort).join(", "):`${days.length} days, ${dayShort(days[0])} to ${dayShort(days[days.length-1])}`;
         const sched=list.map(x=>{ const rows=x.th.length ? x.th.slice().sort((a,b)=>order(a[0])-order(b[0])).map(([tid,ts])=>{const th=DATA.theaters[tid]; return `<span class="nm">${esc(th?th.short:tid)}${th?` <small>${th.mi} mi</small>`:""}</span><span class="tm">${ts.map(s=>fmt(toMin(s))).join("  ")||"see link"}</span>`;}).join("") : `<span class="na">${esc(x.where||"")}</span>`;
           return `<div class="evday">${dayTxt(x.d)}</div><div class="evwhere">${rows}</div>`; }).join("");
-        const plain=plainTitle(e.t); const noTrailer=/concert|met opera|mystery/i.test(e.series||"");
+        const plain=plainTitle(e.t); const noTrailer=/concert|met opera|mystery|drive-in/i.test(e.series||"");
         html+=`<details class="rel"><summary><span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
           ${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
           ${sched}
-          <div class="links">${noTrailer?"":`<a class="trl" href="${trailerHref(e, plain, e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a></div>${/concert|met opera|mystery|fan event|special event/i.test(e.series||"")?"":homeHtml(e, plain)}</div></details>`;
+          <div class="links">${noTrailer?"":`<a class="trl" href="${trailerHref(e, plain, e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a></div>${/concert|met opera|mystery|fan event|special event|drive-in/i.test(e.series||"")?"":homeHtml(e, plain)}</div></details>`;
       }
     }
     html+=`</div>`;
