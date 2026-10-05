@@ -212,6 +212,9 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .relbody .thin{color:var(--muted);font-style:italic}
 .relbody .links{margin-top:2px}
 .home{font-size:.85rem;margin:6px 0 2px;padding:8px 10px;border:1px solid var(--line,rgba(127,127,127,.3));border-radius:10px;display:flex;flex-direction:column;gap:3px}
+.athome{font-size:.8rem;color:var(--muted);margin-top:3px}
+.athome b{font-weight:600;color:var(--fg);margin-right:4px}
+.athome.none b{color:var(--muted)}
 .home .homehd{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .home b{font-weight:600;margin-right:4px}
 .home a{align-self:flex-start;padding-block:4px}
@@ -690,11 +693,18 @@ function trailer(title, year){ return "https://www.youtube.com/results?search_qu
 /* Exact trailer from TMDB when we have one, then Fandango's trailer page, then a YouTube search. */
 function trailerHref(o, title, year){ const k=o.tm&&o.tm.trailer_key; return k&&/^[\w-]{6,20}$/.test(k) ? "https://www.youtube.com/watch?v="+k : o.tr ? url(o.tr) : trailer(title, year); }
 /* Where a film can be watched at home (U.S.), from TMDB / JustWatch. Falls back to a search link when we have no match. */
-function homeHtml(o, title){
+/* One line for the front of the card: the quickest answer to "can we just stay home?" */
+function homeShort(o){
+  const t=o.tm; if(!t) return "";
+  const a=t.stream&&t.stream.length, f=t.free&&t.free.length, r=t.rent&&t.rent.length;
+  const txt = a ? `Streaming on ${esc(t.stream.slice(0,2).join(", "))}${t.stream.length>2?" and more":""}` : f ? `Free on ${esc(t.free.slice(0,2).join(", "))}` : r ? "Rent or buy at home" : "Only in theaters";
+  return `<div class="athome${a||f||r?"":" none"}"><b>At home</b> ${txt}</div>`;
+}
+function homeHtml(o, title, isNew){
   const t=o.tm;
   if(!t) return `<div class="links"><a href="${streamLink(title)}" target="_blank" rel="noopener">Can I stream it at home?</a></div>`;
   const parts=[t.stream&&t.stream.length?`<span><b>Streaming on</b> ${esc(t.stream.join(", "))}</span>`:"", t.free&&t.free.length?`<span><b>Free</b> ${esc(t.free.join(", "))}</span>`:"", t.rent&&t.rent.length?`<span><b>Rent or buy</b> ${esc(t.rent.join(", "))}</span>`:""].filter(Boolean);
-  return `<div class="home"><div class="homehd">At home</div>${parts.length?parts.join(""):`<span>Not on any streaming or rental service in the U.S. right now.</span>`}${t.watch_url?`<a href="${url(t.watch_url)}" target="_blank" rel="noopener">See all options</a>`:""}</div>`;
+  return `<div class="home"><div class="homehd">At home</div>${parts.length?parts.join(""):`<span>${isNew?"Only in theaters right now. Not yet on any streaming or rental service in the U.S.":"Not on any streaming or rental service in the U.S. right now."}</span>`}${t.watch_url?`<a href="${url(t.watch_url)}" target="_blank" rel="noopener">See all options</a>`:""}</div>`;
 }
 const streamLink=t=>"https://reelgood.com/search?q="+encodeURIComponent(t);
 const imdbLink=(t,y)=>"https://www.imdb.com/find/?s=tt&q="+encodeURIComponent(t+(y?" "+y:""));
@@ -714,7 +724,9 @@ function filmBlock(mid, groups){
   }).join("");
   const hasCred=m.dir.length||m.wr.length||m.st.length;
   const older=m.sp || (m.y && m.y<THIS_YEAR);
-  const home = older && !/mystery|concert|met opera/i.test(m.sp||"") ? homeHtml(m, plainTitle(m.t)) : "";
+  const showHome = !/mystery|concert|met opera/i.test(m.sp||"");
+  const home = showHome ? homeHtml(m, plainTitle(m.t), !older) : "";
+  const homeLine = showHome ? homeShort(m) : "";
   const links=`${home}<div class="links">${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
   const credits = (hasCred||m.syn) ? `<details class="cred"><summary>${m.syn?"What it's about, cast and crew":"Director, writers, cast"}</summary><div class="credits">
      ${m.syn?`<p class="syn">${esc(m.syn)}</p>`:""}
@@ -724,7 +736,7 @@ function filmBlock(mid, groups){
      ${links}</div></details>`
      : links;
   const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
-  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
