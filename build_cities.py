@@ -12,6 +12,7 @@ CITIES = {
     # id: (who the page is for, city name for the preview text)
     "dallas": ("the Fife family", "Dallas"),
     "lexington": ("the Mulholland family", "Lexington"),
+    "austin": ("Ryan Winkler", "Austin"),
 }
 
 root = pathlib.Path(__file__).parent
