@@ -417,13 +417,13 @@ async function fetchData(){
   for(let i=0;i<mids.length;i+=150) movies.push(...await sb(`movies?select=*&id=in.(${mids.slice(i,i+150).join(",")})`));
   const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,madeFor:city[0]?.made_for||null,defaultRatings:city[0]?.default_ratings||["G","PG"],cityName:city[0]?.name||null};
   for(const r of ct){const t=r.theaters; D.theaters[t.id]={name:t.name,short:t.short_name,rank:r.rank,mi:Number(r.miles),indie:t.is_indie};}
-  for(const m of movies) D.movies[m.id]={g:m.genres,fam:m.family_ok,t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors,wr:m.writers,st:m.stars,fd:m.fandango_url};
+  for(const m of movies) D.movies[m.id]={g:m.genres||"",fam:m.family_ok,t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors||[],wr:m.writers||[],st:m.stars||[],fd:m.fandango_url};
   // Fandango sometimes lists one showing under two formats (e.g. standard and Premium); keep one, with the format.
   const seenShow=new Map();
   for(const s of shows){ if(!D.movies[s.movie_id]) continue; const k=s.theater_id+"|"+s.show_date+"|"+s.movie_id+"|"+s.start_time.slice(0,5); const prev=seenShow.get(k);
     if(prev){ if(!prev[3] && s.format) prev[3]=s.format; continue; }
     const row=[s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]; seenShow.set(k,row); D.shows.push(row); }
-  for(const e of events) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times,syn:e.summary||null});
+  for(const e of events) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times||[],syn:e.summary||null});
   const detBy=new Map(dets.map(x=>[x.source_url,x]));
   const fi=new Map(finfo.map(x=>[x.url,x]));
   for(const id in D.movies){ const x=fi.get(D.movies[id].fd); if(x){ D.movies[id].syn=x.synopsis; D.movies[id].tr=x.trailer_url; } }
@@ -436,7 +436,7 @@ async function fetchData(){
 }
 
 
-const RATINGS = ["G","PG","PG-13","R","NR"];
+const RATINGS = ["G","PG","PG-13","R","NC-17","NR"];
 const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:"all", view:"theater", mc:0, age:99, th:"all", after:0, osc:false, keepsp:true, hidepast:true, soon:["special","wide"], who:"family", showNR:false};
 const $=id=>document.getElementById(id);
 
@@ -529,7 +529,7 @@ function filterSummary(){
 }
 
 function render(){
-  if(!S.day) S.day = defaultDay();
+  if(!S.day || S.day<todayStr()) S.day = defaultDay();
   for(const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.mode===S.mode);
   $("days").hidden = S.mode!=="show" || !!S.focus;
   pills($("days"), DAYS.filter(d=>d>=todayStr()||d===DAYS[DAYS.length-1]).map(d=>{const l=dayLabel(d);return [d,`<b>${l.w}</b><small>${l.md}</small>`];}), v=>v===S.day, v=>{S.day=v;S.focus=null;}, "day");
@@ -564,7 +564,7 @@ function renderShows(){
   let nrHid=0;
   if(S.who==="family" && !S.showNR && !S.focus){ const hid=new Set(); for(const s of DATA.shows){ if(!(spec||s[1]===S.day) || !theaterOK(s[0])) continue; const m=DATA.movies[s[2]]; if((!m.r||m.r==="NR") && (!spec||m.sp) && !famOK({csm:m.csm,g:m.g,sp:m.sp,fam:m.fam})) hid.add(s[2]); } nrHid=hid.size; }
   $("count").innerHTML = (rows.length ? (spec?"Special showings, all week · ":"")+`${films.size} movie${films.size>1?"s":""} · ${rows.length} showtimes · ${ths.size} theater${ths.size>1?"s":""}` : "") + (nrHid?`${rows.length?" · ":""}${nrHid} unrated hidden in Family Mode <button class="linkbtn" data-shownr>Show</button>`:"");
-  if(!rows.length){ out.innerHTML=`<div class="empty">Nothing matches. Try another day${filtersActive()?`, or clear your filters.<br><button class="clearbtn big" data-clear>Clear filters</button>`:(S.who==="family"?", or switch to Grown-ups at the top.":".")}</div>`; return; }
+  if(!rows.length){ out.innerHTML=`<div class="empty">Nothing matches. ${S.mode==="spec"?"There may be no special showings this week":"Try another day"}${filtersActive()?`, or clear your filters.<br><button class="clearbtn big" data-clear>Clear filters</button>`:(S.who==="family"?", or switch to Grown-ups at the top.":".")}</div>`; return; }
 
   let html="";
   if(spec||S.focus){
@@ -872,6 +872,9 @@ async function boot(){
   setupReq();
   $("tourbtn").onclick=()=>{ if(DATA) startTour(); };
   $("out").innerHTML=`<div class="empty">Loading showtimes…</div>`;
+  /* A phone can keep the tab open for days: reload when it is opened on a later date. */
+  const loadedOn=todayStr();
+  document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && todayStr()!==loadedOn) location.reload(); });
   try{ DATA=await fetchData(); }
   catch(err){ const setup=/No theaters/.test(err.message); $("out").innerHTML=`<div class="empty">${setup?`This city isn't set up yet. <button class="done" id="reqbtn3">Request your city</button>`:"Couldn't load showtimes ("+esc(err.message)+"). Check your connection and reload."}</div>`; if(setup){ $("madefor").textContent=""; $("reqbtn3").onclick=openReq; } return; }
   $("madefor").textContent = DATA.madeFor ? " for "+DATA.madeFor : "";
