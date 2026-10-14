@@ -73,7 +73,7 @@ h1 span{color:var(--accent)}
 /* Sticky bar */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:grid;gap:8px}
 .tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--chip);border-radius:10px;padding:3px;gap:3px}
-.tabs button{border:0;background:transparent;color:var(--fg);font-weight:700;font-size:.88rem;padding:8px 4px;white-space:nowrap;border-radius:8px;cursor:pointer}
+.tabs button{border:0;background:transparent;color:var(--fg);font-weight:700;font-size:.88rem;padding:8px 4px;min-height:40px;white-space:nowrap;border-radius:8px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .tabs button[data-mode="spec"][aria-selected="true"]{color:var(--accent)}
 .tabs button[data-mode="soon"][aria-selected="true"]{color:var(--amber)}
@@ -86,7 +86,7 @@ button.day[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-colo
 button.day[aria-pressed="true"] small{color:var(--bg);opacity:.8}
 .bar>*{min-width:0}
 .filterline{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
-button.fbtn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;font-weight:700;font-size:.85rem;cursor:pointer}
+button.fbtn{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:5px 12px;min-height:36px;font-weight:700;font-size:.85rem;cursor:pointer}
 button.fbtn[aria-expanded="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .fsum{flex:1;font-size:.82rem;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
@@ -235,7 +235,7 @@ a.trl:hover,a.trl:focus-visible{text-decoration:underline}
 .foot{margin-top:36px;font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;display:grid;gap:6px;max-width:68ch}
 h1 b{font-weight:800}
 .hdr-actions{display:flex;gap:6px}
-.ibtn{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:800;cursor:pointer}
+.ibtn{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:800;cursor:pointer}
 .addcity{margin-top:32px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:14px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
 .addcity div{display:grid;gap:2px;min-width:0}
 .addcity span{font-size:.88rem;color:var(--muted)}
@@ -370,7 +370,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
       <div class="plist" id="rq-plist"></div>
       <button type="button" class="linkbtn" id="rq-clear" hidden>Clear picks</button>
     </div>
-    <label for="rq-other">Theaters we missed <small>Optional. Indie theaters, museum film series, anything not in the list.</small><textarea id="rq-other" maxlength="1000"></textarea></label>
+    <label for="rq-other">Theaters we missed <small>Optional. Indie theaters, museum film series, anything not in the list.</small><textarea id="rq-other" maxlength="500"></textarea></label>
     <fieldset class="rqrates"><legend>What counts as Family Mode for you? <small>Most families pick G and PG. Grown-Up Mode always shows everything.</small></legend>
       <div class="chips" id="rq-rates"><button type="button" class="pill" aria-pressed="true" data-r="G">G</button><button type="button" class="pill" aria-pressed="true" data-r="PG">PG</button><button type="button" class="pill" aria-pressed="false" data-r="PG-13">PG-13</button><button type="button" class="pill" aria-pressed="false" data-r="R">R</button><button type="button" class="pill" aria-pressed="false" data-r="NR">NR</button></div>
     </fieldset>
