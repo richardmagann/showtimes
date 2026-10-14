@@ -621,7 +621,7 @@ function relRow(r, tagHtml, dayHtml){
     ${(d.stars||[]).length?`<div><b>Starring</b>${nameLinks(d.stars)}</div>`:""}
     ${r.dist?`<div><b>Studio</b>${esc(r.dist)}</div>`:""}
     ${thin?`<div class="thin">Not much has been announced yet. More will appear here as the release gets closer.</div>`:""}
-    <div class="links">${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailerHref(r, r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${imdbLink(r.t, r.d.slice(0,4))}" target="_blank" rel="noopener">More on IMDb</a></div></div></details>`;
+    <div class="links">${/^untitled/i.test(r.t)?"":`<a class="trl" href="${trailerHref(r, r.t, r.k==="rerelease"?"":r.d.slice(0,4))}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${imdbLink(r.t, r.k==="rerelease"?"":r.d.slice(0,4))}" target="_blank" rel="noopener">More on IMDb</a></div></div></details>`;
 }
 // Coming soon: new movies by opening week, plus special events at this family's theaters, in one list.
 function renderSoon(){
@@ -635,11 +635,13 @@ function renderSoon(){
   const relOK=r=>{ const d=r.det; if(d && d.rating && !S.ratings.has(d.rating)) return false;
     if(S.type!=="all"){ if(!d || !d.method) return false; const anim=/animation/i.test(d.method); if((S.type==="anim")!==anim) return false; }
     return true; };
-  const relAll=(DATA.releases||[]).filter(r=>r.d>=today && on(r.k));
+  /* Re-releases from the release calendar ride with special events. */
+  const relAll=(DATA.releases||[]).filter(r=>r.d>=today && on(r.k==="rerelease"?"special":r.k));
   const movies=relAll.filter(relOK), relHidden=relAll.length-movies.length;
+  const nNew=movies.filter(r=>r.k!=="rerelease").length, nRe=movies.length-nNew;
   const parts=[];
-  if(movies.length||relHidden) parts.push(`${movies.length} new movies`+(relHidden?` (${relHidden} more hidden ${S.who==="family"&&S.type==="all"?"in Family Mode":"by your filters"})`:""));
-  if(on("special")) parts.push(`${evs.length} special events`+(evHidden?(S.who==="family"?` (${evHidden} more hidden in Family Mode${nrHid?` · <button class="linkbtn" data-shownr>Show the ${nrHid} unrated</button>`:""})`:` (${evHidden} more hidden by your rating filter)`):""));
+  if(nNew||relHidden) parts.push(`${nNew} new movies`+(relHidden?` (${relHidden} more hidden ${S.who==="family"&&S.type==="all"?"in Family Mode":"by your filters"})`:""));
+  if(on("special")) parts.push(`${evs.length+nRe} special events`+(evHidden?(S.who==="family"?` (${evHidden} more hidden in Family Mode${nrHid?` · <button class="linkbtn" data-shownr>Show the ${nrHid} unrated</button>`:""})`:` (${evHidden} more hidden by your rating filter)`):""));
   $("count").innerHTML=parts.length?parts.join(" · "):"Pick at least one thing to show above.";
 
   const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
@@ -649,11 +651,13 @@ function renderSoon(){
   const group=(d,lbl)=>{ const fri=friOf(d); const key=lbl?("z|"+d+"|"+lbl):("a|"+iso(fri));
     if(!groups.has(key)) groups.set(key,{fri, lbl, month:(lbl?new Date(d+"T12:00"):fri).toLocaleDateString("en-US",{month:"long",year:"numeric"}), sortKey:(lbl?d+"z":iso(fri)), movies:[], events:[]});
     return groups.get(key); };
-  for(const r of movies) group(r.d, r.lbl).movies.push(r);
   for(const e of evs) group(e.d, null).events.push(e);
+  /* A re-release your theaters already list on Fandango shows once, as the special event with times. */
+  const keyT=t=>plainTitle(t).toLowerCase().replace(/[^a-z0-9]/g,"");
+  for(const r of movies){ const g=group(r.d, r.lbl); if(r.k==="rerelease" && g.events.some(e=>keyT(e.t)===keyT(r.t))) continue; g.movies.push(r); }
 
-  const ko={wide:0,arthouse:1,limited:2};
-  const tag=r=>r.k==="wide"?`<span class="tag wide">${/expands/i.test(r.scope)?"Expands wide":"Wide"}</span>`:r.k==="arthouse"?`<span class="tag art">${/oscar/i.test(r.scope)?"Oscar-qualifying run":"Limited"}</span>`:`<span class="tag lim">Limited</span>`;
+  const ko={wide:0,arthouse:1,limited:2,rerelease:3};
+  const tag=r=>r.k==="rerelease"?`<span class="tag">★ Re-release</span>`:r.k==="wide"?`<span class="tag wide">${/expands/i.test(r.scope)?"Expands wide":"Wide"}</span>`:r.k==="arthouse"?`<span class="tag art">${/oscar/i.test(r.scope)?"Oscar-qualifying run":"Limited"}</span>`:`<span class="tag lim">Limited</span>`;
   const order=t=>{const i=FAV_ORDER.indexOf(t);return i<0?99:i;};
   const tagCls=s=>/ghibli/i.test(s)?"ghibli":/fathom|met opera/i.test(s)?"fathom":/concert|live/i.test(s)?"live":"";
   const dayTxt=d=>new Date(d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
