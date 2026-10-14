@@ -441,8 +441,11 @@ const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:
 const $=id=>document.getElementById(id);
 
 const PREF_KEY="mfs2-"+CITY;
-function load(){ S.ratings=new Set(DATA.defaultRatings); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ Object.assign(S,v,{ratings:new Set(v.ratings||DATA.defaultRatings),mode:"show",focus:null,day:null,who:"family",showNR:false}); if(S.th!=="fav") S.th="all"; } }catch(e){} }
-function save(){ try{ localStorage.setItem(PREF_KEY, JSON.stringify({...S, ratings:[...S.ratings], day:null, focus:null, mode:"show"})); }catch(e){} }
+const KEEP=["view","th","hidepast","keepsp","soon"];
+function load(){ S.ratings=new Set(DATA.defaultRatings); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ for(const k of KEEP) if(v[k]!==undefined) S[k]=v[k]; if(S.th!=="fav") S.th="all"; if(!Array.isArray(S.soon)) S.soon=["special","wide"]; } }catch(e){} }
+/* Only "how I like to browse" settings are kept between visits. Narrowing filters (score, kid age, start time,
+   animated/live action) and ratings start fresh each visit so nobody comes back to a quietly shortened list. */
+function save(){ try{ const o={}; for(const k of KEEP) o[k]=S[k]; localStorage.setItem(PREF_KEY, JSON.stringify(o)); }catch(e){} }
 
 const pad=n=>String(n).padStart(2,"0");
 function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
@@ -746,7 +749,7 @@ const TOUR=[
   {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows G and PG movies, plus unrated ones that look family-friendly. <b>Grown-ups</b> shows everything. Switch any time."},
   {sel:".tabs", title:"Three tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>★ Specials</b>: this week's can't-miss one-off and classic screenings. Think Back to the Future on the big screen again!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
-  {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Your choices are remembered on this device."},
+  {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Filters start fresh each visit; how you group the list and which theaters you show are remembered on this device."},
   {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie, today and on the days ahead."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
   {sel:"#relkinds", sel2:"#tab-soon", mode:"soon", title:"Coming soon: choose what to see", text:"You're now on the <b>Coming soon</b> tab, which looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
