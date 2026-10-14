@@ -418,13 +418,15 @@ async function fetchData(){
   for(let i=0;i<mids.length;i+=150) movies.push(...await sb(`movies?select=*&id=in.(${mids.slice(i,i+150).join(",")})`));
   const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,madeFor:city[0]?.made_for||null,defaultRatings:city[0]?.default_ratings||["G","PG"],cityName:city[0]?.name||null};
   for(const r of ct){const t=r.theaters; D.theaters[t.id]={name:t.name,short:t.short_name,rank:r.rank,mi:Number(r.miles),indie:t.is_indie};}
-  for(const m of movies) D.movies[m.id]={g:m.genres||"",fam:m.family_ok,t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors||[],wr:m.writers||[],st:m.stars||[],fd:m.fandango_url};
+  /* UFC fight broadcasts are left off the site entirely (showtimes, special events and the release calendar). */
+  const DROP=/\bUFC\b/i;
+  for(const m of movies) if(!DROP.test(m.title||"")) D.movies[m.id]={g:m.genres||"",fam:m.family_ok,t:m.title,y:m.year,r:m.rating,fr:m.fandango_rating,rt:m.runtime_min,anim:m.animated,sp:m.special_type,osc:m.oscar,note:m.note,mc:m.metacritic,mcS:m.metacritic_slug,csm:m.csm_age,csmS:m.csm_slug,wiki:m.wiki_title,dir:m.directors||[],wr:m.writers||[],st:m.stars||[],fd:m.fandango_url};
   // Fandango sometimes lists one showing under two formats (e.g. standard and Premium); keep one, with the format.
   const seenShow=new Map();
   for(const s of shows){ if(!D.movies[s.movie_id]) continue; const k=s.theater_id+"|"+s.show_date+"|"+s.movie_id+"|"+s.start_time.slice(0,5); const prev=seenShow.get(k);
     if(prev){ if(!prev[3] && s.format) prev[3]=s.format; continue; }
     const row=[s.theater_id,s.show_date,s.movie_id,s.format,s.start_time.slice(0,5)]; seenShow.set(k,row); D.shows.push(row); }
-  for(const e of events) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times||[],syn:e.summary||null});
+  for(const e of events) if(!DROP.test(e.title||"")) D.calendar.push({csm:e.csm_age,g:e.genres,fam:e.family_ok,d:e.event_date,t:e.title,y:e.year,r:e.rating,series:e.series,src:e.source_url,srcName:e.source_name,where:e.location_note,th:e.theater_times||[],syn:e.summary||null});
   const detBy=new Map(dets.map(x=>[x.source_url,x]));
   const fi=new Map(finfo.map(x=>[x.url,x]));
   for(const id in D.movies){ const x=fi.get(D.movies[id].fd); if(x){ D.movies[id].syn=x.synopsis; D.movies[id].tr=x.trailer_url; } }
@@ -432,7 +434,7 @@ async function fetchData(){
   const tm=new Map(tmdb.map(x=>[x.ref,x]));
   for(const id in D.movies) D.movies[id].tm=tm.get("m:"+id)||null;
   for(const e of D.calendar) e.tm=tm.get("e:"+e.t)||null;
-  D.releases=rels.map(r=>({tm:tm.get("r:"+r.source_url)||null,det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
+  D.releases=rels.filter(r=>!DROP.test(r.title||"")).map(r=>({tm:tm.get("r:"+r.source_url)||null,det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
   return D;
 }
 
