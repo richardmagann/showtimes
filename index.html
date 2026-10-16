@@ -119,10 +119,10 @@ button.done{border:0;background:var(--accent);color:#fff;border-radius:999px;pad
 .strip .scroll::-webkit-scrollbar{display:none}
 .strip h3 .more{letter-spacing:0;text-transform:none;font-weight:700}
 .strip.many .scroll{-webkit-mask-image:linear-gradient(to right,#000 82%,transparent);mask-image:linear-gradient(to right,#000 82%,transparent);padding-right:36px}
-.strip.many button.spcard{flex:0 0 70%}
-button.spcard{flex:none;max-width:240px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer}
-button.spcard b{display:block;font-size:.9rem;line-height:1.25}
-button.spcard small{display:block;font-size:.75rem;color:var(--muted);margin-top:3px}
+.strip.many .spcard{flex:0 0 70%}
+.spcard{display:block;text-decoration:none;flex:none;max-width:240px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:8px 10px;cursor:pointer}
+.spcard b{display:block;font-size:.9rem;line-height:1.25}
+.spcard small{display:block;font-size:.75rem;color:var(--muted);margin-top:3px}
 
 /* Theater / day groups */
 section.group{margin-top:22px}
@@ -142,9 +142,9 @@ section.group{margin-top:22px}
 .ftitle{flex:1;min-width:0}
 .ftitle h3{margin:0;font-size:1.1rem;line-height:1.25;font-weight:700}
 .ftitle h3 .yr{font-weight:400;color:var(--muted)}
-button.ttl{all:unset;cursor:pointer;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
-button.ttl:hover{color:var(--accent);text-decoration-color:var(--accent)}
-button.ttl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ttl{all:unset;cursor:pointer;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.ttl:hover{color:var(--accent);text-decoration-color:var(--accent)}
+.ttl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .facts{font-size:.85rem;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .badge{font-size:.8rem;font-weight:700;color:var(--amber)}
@@ -589,7 +589,7 @@ function renderShows(){
   if(spm.length){
     html+=`<div class="strip${spm.length>1?" many":""}"><h3>★ Special showings ${S.day===today?"today, ":"on "}${dayLabel(S.day).w} ${dayLabel(S.day).md}${spm.length>1?`<span class="more">${spm.length} showings · swipe ›</span>`:""}</h3><div class="scroll">`+
       spm.map(id=>{const m=DATA.movies[id]; const r=rows.filter(x=>x.m===id); const th=[...new Set(r.map(x=>DATA.theaters[x.th].short))]; const first=r.map(x=>toMin(x.t)).sort((a,b)=>a-b)[0];
-        return `<button class="spcard" data-focus="${id}"><b>${esc(m.t)}</b><small>${esc(m.sp)} · ${esc(m.r)}</small><small>${th.length>1?th.length+" theaters":esc(th[0])} · from ${fmt(first)}</small></button>`;}).join("")+`</div></div>`;
+        return `<a class="spcard" href="${movieHref(id)}" data-focus="${id}"><b>${esc(m.t)}</b><small>${esc(m.sp)} · ${esc(m.r)}</small><small>${th.length>1?th.length+" theaters":esc(th[0])} · from ${fmt(first)}</small></a>`;}).join("")+`</div></div>`;
   }
   if(S.view==="theater"){
     for(const tid of FAV_ORDER){
@@ -720,6 +720,8 @@ function homeHtml(o, title, isNew){
 const streamLink=t=>"https://reelgood.com/search?q="+encodeURIComponent(t);
 const imdbLink=(t,y)=>"https://www.imdb.com/find/?s=tt&q="+encodeURIComponent(t+(y?" "+y:""));
 // Strip event wording so a search finds the film itself ("Rocky 50th Anniversary" -> "Rocky").
+/* A real link for each movie, so Cmd/Ctrl-click or a long-press opens it in a new tab. */
+const movieHref=id=>{ const u=new URLSearchParams(location.search); u.set("movie",id); return "?"+u.toString(); };
 const plainTitle=t=>t.replace(/\s*[-–:]?\s*\(?\d+(st|nd|rd|th)\s+anniversary.*$/i,"").replace(/(\s*\([^)]*\))+\s*$/,"").replace(/\s*[-–:]\s*(encore|re-?release|fan event|early access).*$/i,"").trim();
 function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
 function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
@@ -747,7 +749,7 @@ function filmBlock(mid, groups){
      ${links}</div></details>`
      : links;
   const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
-  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><button class="ttl" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</button>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><a class="ttl" href="${movieHref(mid)}" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</a>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
@@ -893,15 +895,18 @@ async function boot(){
   DAYS = [...new Set(DATA.shows.map(s=>s[1]))].sort();
   if(!DAYS.length){ $("out").innerHTML=`<div class="empty">No showtimes loaded yet. The next refresh will fill them in.</div>`; return; }
 load();
+{ const pm=new URLSearchParams(location.search).get("movie"); if(pm && DATA.movies[pm]) S.focus=pm; }
 for(const b of document.querySelectorAll(".tabs button")) b.onclick=()=>{S.mode=b.dataset.mode;S.focus=null;render();window.scrollTo({top:0});};
 const setPanel=open=>{$("panel").hidden=!open;$("fbtn").setAttribute("aria-expanded",open);};
 $("fbtn").onclick=()=>setPanel($("panel").hidden);
 $("done").onclick=()=>setPanel(false);
 /* Remember where you were before opening one movie, so "Show all movies" brings you back to the same spot and tab. */
 let focusBack=null;
-$("unfocus").onclick=()=>{ const back=focusBack; focusBack=null; S.focus=null; if(back) S.mode=back.mode; render();
+$("unfocus").onclick=()=>{ const back=focusBack; focusBack=null; S.focus=null;
+  { const u=new URLSearchParams(location.search); if(u.has("movie")){ u.delete("movie"); history.replaceState(null,"",location.pathname+(u.toString()?"?"+u:"")); } } if(back) S.mode=back.mode; render();
   if(back) requestAnimationFrame(()=>window.scrollTo({top:back.y})); else window.scrollTo({top:0}); };
-$("out").addEventListener("click",e=>{const b=e.target.closest("[data-focus]"); if(!b) return; if(!S.focus) focusBack={y:window.scrollY, mode:S.mode}; S.focus=b.dataset.focus; if(S.mode==="soon") S.mode="show"; render(); window.scrollTo({top:0});});
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-focus]"); if(!b) return;
+  if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0) return; e.preventDefault(); if(!S.focus) focusBack={y:window.scrollY, mode:S.mode}; S.focus=b.dataset.focus; if(S.mode==="soon") S.mode="show"; render(); window.scrollTo({top:0});});
 for(const [id,key] of [["mc","mc"],["age","age"],["after","after"]]) $(id).value=S[key];
 $("th").value=S.th;
 for(const id of ["osc","keepsp","hidepast"]) $(id).checked=S[id];
