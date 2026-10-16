@@ -127,6 +127,8 @@ button.spcard small{display:block;font-size:.75rem;color:var(--muted);margin-top
 /* Theater / day groups */
 section.group{margin-top:22px}
 .ghead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:5px}
+/* Theater / day headings stay pinned under the top bar while you scroll through their movies. */
+.group>.ghead{position:sticky;top:calc(var(--barh,150px) + env(safe-area-inset-top,0px) - 1px);z-index:3;background:var(--bg);padding-top:8px;margin-top:-8px}
 .ghead h2{font-weight:700;font-size:1.2rem;margin:0;line-height:1.2}
 .ghead .meta{font-size:.82rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .rank{display:inline-block;font-family:var(--mono);font-size:.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-right:8px;vertical-align:2px}
