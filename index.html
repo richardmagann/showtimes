@@ -895,8 +895,11 @@ for(const b of document.querySelectorAll(".tabs button")) b.onclick=()=>{S.mode=
 const setPanel=open=>{$("panel").hidden=!open;$("fbtn").setAttribute("aria-expanded",open);};
 $("fbtn").onclick=()=>setPanel($("panel").hidden);
 $("done").onclick=()=>setPanel(false);
-$("unfocus").onclick=()=>{S.focus=null;render();window.scrollTo({top:0});};
-$("out").addEventListener("click",e=>{const b=e.target.closest("[data-focus]"); if(!b) return; S.focus=b.dataset.focus; if(S.mode==="soon") S.mode="show"; render(); window.scrollTo({top:0});});
+/* Remember where you were before opening one movie, so "Show all movies" brings you back to the same spot and tab. */
+let focusBack=null;
+$("unfocus").onclick=()=>{ const back=focusBack; focusBack=null; S.focus=null; if(back) S.mode=back.mode; render();
+  if(back) requestAnimationFrame(()=>window.scrollTo({top:back.y})); else window.scrollTo({top:0}); };
+$("out").addEventListener("click",e=>{const b=e.target.closest("[data-focus]"); if(!b) return; if(!S.focus) focusBack={y:window.scrollY, mode:S.mode}; S.focus=b.dataset.focus; if(S.mode==="soon") S.mode="show"; render(); window.scrollTo({top:0});});
 for(const [id,key] of [["mc","mc"],["age","age"],["after","after"]]) $(id).value=S[key];
 $("th").value=S.th;
 for(const id of ["osc","keepsp","hidepast"]) $(id).checked=S[id];
