@@ -63,7 +63,13 @@ header.top .who{grid-column:1/-1;margin-top:8px;order:9}
 .whoask .choices button b{font-size:1.2rem}
 .whoask .choices button small{color:var(--muted);font-size:.85rem}
 .whoask .choices button:hover,.whoask .choices button:focus-visible{border-color:var(--accent)}
-.whoask .by{font-size:.82rem;color:var(--muted)}
+.whoask .by{font-size:.82rem;color:var(--muted);line-height:1.4}
+.fam13{display:flex;align-items:center;gap:8px;font-size:.9rem;margin-top:10px;cursor:pointer}
+.fam13 input{width:20px;height:20px;margin:0;flex:none}
+.fam13 small{color:var(--muted);font-size:.78rem}
+.fam13.inask{justify-content:center;text-align:left;margin:2px 0 0}
+.fam13.inask small{display:block}
+.who button small{display:block;font-size:.7rem;font-weight:600;opacity:.75;margin-top:1px}
 .byline{font-size:.88rem;color:var(--fg)}
 .byline b{font-weight:700}
 h1{font-family:var(--display);font-weight:800;font-size:clamp(1.2rem,5.6vw,1.7rem);text-wrap:balance;line-height:1;letter-spacing:.02em;text-transform:uppercase;margin:0}
@@ -78,7 +84,7 @@ h1 span{color:var(--accent)}
 .tabs button[data-mode="spec"][aria-selected="true"]{color:var(--accent)}
 .tabs button[data-mode="soon"][aria-selected="true"]{color:var(--amber)}
 .tabs button[data-mode="list"]{color:#a07800}
-.tabs .cnt{position:absolute;top:1px;right:2px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#d4a017;color:#fff;font-size:.66rem;line-height:16px;font-weight:700}
+.tabs .cnt{position:absolute;top:-6px;right:-3px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#d4a017;color:#fff;font-size:.66rem;line-height:16px;font-weight:700}
 .tabs .cnt.pulse{animation:pulse .6s}
 @keyframes pulse{50%{transform:scale(1.35)}}
 .row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
@@ -119,6 +125,9 @@ button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-col
 .mladd label{display:flex;flex-direction:column;gap:3px;font-size:.8rem;font-weight:600}
 .mladd input,.mladd select{font:inherit;font-size:16px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0}
 .mladdw{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:8px}
+.mladdw label{min-width:0}.mladdw input,.mladdw select{width:100%;min-width:0;box-sizing:border-box}
+.nb{white-space:nowrap}
+.cnthint{color:var(--muted)}
 .mladd .pill{align-self:flex-start}
 .ftitle h3 .star{font-size:1.05rem;vertical-align:1px;margin-right:2px}
 .mlempty{padding:14px;border:1px dashed var(--line);border-radius:10px;font-size:.9rem;line-height:1.45}
@@ -276,6 +285,7 @@ html.srch-open,html.srch-open body{overflow:hidden}
 a.srt:hover{text-decoration:underline}
 .smeta{font-size:.84rem;color:var(--muted);margin-top:2px}
 .srchadd{margin:18px 0 0}
+.srmore{font-size:.82rem;color:var(--muted);margin:6px 0 0}
 .panel h4 small{text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px}
 .rel .evsum{flex-basis:100%;color:var(--muted);font-size:.84rem}
 .relbody .evwhere{margin-top:2px}
@@ -398,7 +408,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
     <button class="fbtn" id="fbtn" aria-expanded="false" aria-controls="panel">Filters</button>
   </div>
   <div class="panel" id="panel" hidden>
-    <div><h4>Rating</h4><div class="chips" id="ratings"></div></div>
+    <div><h4>Rating</h4><div class="chips" id="ratings"></div><label class="fam13" id="fam13p" hidden><input type="checkbox" id="fam13c"> Count PG-13 as Family on this phone</label></div>
     <div><h4>Type</h4><div class="chips" id="types"></div></div>
     <div><h4>Genre <small>pick any; none picked shows all</small></h4><div class="chips" id="genres"></div></div>
     <div id="viewbox"><h4>Group by</h4><div class="chips" id="views"></div></div>
@@ -521,8 +531,13 @@ const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:
 const $=id=>document.getElementById(id);
 
 const PREF_KEY="mfs2-"+CITY;
+/* A household can count PG-13 as Family on this phone. It is a who-we-are setting, not a narrowing filter, so it is remembered. */
+const FAM13_KEY="mfs-fam13-"+CITY;
+function fam13(){ try{ return localStorage.getItem(FAM13_KEY)==="1"; }catch(e){ return false; } }
+function setFam13(on){ try{ on?localStorage.setItem(FAM13_KEY,"1"):localStorage.removeItem(FAM13_KEY); }catch(e){} }
+function famRatings(){ const r=[...DATA.defaultRatings]; if(fam13() && !r.includes("PG-13")) r.push("PG-13"); return r.sort((a,b)=>RATINGS.indexOf(a)-RATINGS.indexOf(b)); }
 const KEEP=["view","th","hidepast","keepsp","soon","listView"];
-function load(){ S.ratings=new Set(DATA.defaultRatings); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ for(const k of KEEP) if(v[k]!==undefined) S[k]=v[k]; if(S.th!=="fav") S.th="all"; if(!Array.isArray(S.soon)) S.soon=["special","wide"]; } }catch(e){} }
+function load(){ S.ratings=new Set(famRatings()); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ for(const k of KEEP) if(v[k]!==undefined) S[k]=v[k]; if(S.th!=="fav") S.th="all"; if(!Array.isArray(S.soon)) S.soon=["special","wide"]; } }catch(e){} }
 /* Only "how I like to browse" settings are kept between visits. Narrowing filters (score, kid age, start time,
    animated/live action) and ratings start fresh each visit so nobody comes back to a quietly shortened list. */
 function save(){ try{ const o={}; for(const k of KEEP) o[k]=S[k]; localStorage.setItem(PREF_KEY, JSON.stringify(o)); }catch(e){} }
@@ -562,7 +577,7 @@ function ratingOK(o, special){
 }
 function setWho(w){
   S.who=w; S.showNR=false;
-  S.ratings = w==="family" ? new Set(DATA.defaultRatings) : new Set(RATINGS);
+  S.ratings = w==="family" ? new Set(famRatings()) : new Set(RATINGS);
   try{ sessionStorage.setItem("mfs-who-"+CITY, w); }catch(e){}
 }
 function movieOK(m, specialsMode){
@@ -618,7 +633,9 @@ function render(){
   for(const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.mode===S.mode);
   $("days").hidden = S.mode!=="show" || !!S.focus;
   pills($("days"), DAYS.filter(d=>d>=todayStr()||d===DAYS[DAYS.length-1]).map(d=>{const l=dayLabel(d);return [d,`<b>${l.w}</b><small>${l.md}</small>`];}), v=>v===S.day, v=>{S.day=v;S.focus=null;}, "day");
-  for(const b of document.querySelectorAll("#who button")) b.setAttribute("aria-pressed", b.dataset.who===S.who);
+  for(const b of document.querySelectorAll("#who button")){ b.setAttribute("aria-pressed", b.dataset.who===S.who);
+    const sub=b.dataset.who==="family" ? famRatings().join(" · ") : "All ratings"; let sm=b.querySelector("small"); if(!sm){ sm=document.createElement("small"); b.appendChild(sm); } sm.textContent=sub; }
+  { const f=$("fam13p"); if(f){ f.hidden=DATA.defaultRatings.includes("PG-13"); $("fam13c").checked=fam13(); } }
   const soon = S.mode==="soon";
   $("relkinds").hidden = !soon;
   if(!Array.isArray(S.soon)) S.soon=["special","wide"];
@@ -697,13 +714,19 @@ const wikiName=n=>"https://en.wikipedia.org/wiki/Special:Search?go=Go&search="+e
 const nameLinks=list=>(list||[]).map(n=>`<a href="${wikiName(n)}" target="_blank" rel="noopener">${esc(n)}</a>`).join(", ");
 /* ---------- Genres ----------
    Broad groups built from TMDB's genres, Fandango's, and The Numbers', whichever we have for a film. */
-const GENRES=[["act","Action & Adventure",/action|adventure|\bwar\b|western/i],["com","Comedy",/comedy/i],["dra","Drama",/drama|romance|biograph|histor/i],["sci","Sci-Fi & Fantasy",/sci-?fi|science fiction|fantasy/i],["hor","Horror & Thriller",/horror|thriller|suspense|myster|crime/i],["fam","Family",/family/i],["doc","Documentary",/documentar/i]];
+const GENRES=[["act","Action & Adventure",/action|adventure|\bwar\b|western/i],["com","Comedy",/comedy/i],["dra","Drama & Romance",/drama|romance|biograph|histor/i],["sci","Sci-Fi & Fantasy",/sci-?fi|science fiction|fantasy/i],["hor","Horror",/horror/i],["thr","Thriller, Crime & Mystery",/thriller|suspense|myster|crime/i],["fam","Family",/family/i],["doc","Documentary",/documentar/i],["mus","Music & Concerts",/music|concert|performing arts|performance/i]];
 /* TMDB's genres are the most specific, so they win when we have them; Fandango lumps "Action/Adventure" and "Sci-Fi/Fantasy". */
-function gText(x, kind){ const tm=(x.tm&&x.tm.genres)||[]; return tm.length ? tm.join("|") : (kind==="r"?((x.det&&x.det.genre)||""):(x.g||"")); }
-function gKeys(txt){ return GENRES.filter(g=>g[2].test(txt)).map(g=>g[0]); }
-/* The short label on a card picks the closer word within each group (Horror vs Thriller, Sci-Fi vs Fantasy). */
-function gLabel(x, kind, max){ const t=gText(x, kind); const out=gKeys(t).map(k=>({act:/action/i.test(t)?"Action":/adventure/i.test(t)?"Adventure":/western/i.test(t)?"Western":"War", com:"Comedy", dra:/drama/i.test(t)?"Drama":/romance/i.test(t)?"Romance":/biograph/i.test(t)?"Biography":"History", sci:/sci-?fi|science fiction/i.test(t)?"Sci-Fi":"Fantasy", hor:/horror/i.test(t)?"Horror":/thriller|suspense/i.test(t)?"Thriller":/crime/i.test(t)?"Crime":"Mystery", fam:"Family", doc:"Documentary"})[k]);
-  return out.slice(0, max||3).join(" · "); }
+function gList(x, kind){ const tm=(x.tm&&x.tm.genres)||[]; if(tm.length) return tm;
+  const raw=kind==="r"?((x.det&&x.det.genre)||""):(x.g||""); return raw.split(/\s*\|\s*/).filter(g=>g && !/special events|multiple genres|animat/i.test(g)); }
+function gText(x, kind){ return gList(x, kind).join("|"); }
+/* A concert film is tagged Documentary + Music on TMDB; it belongs with music, not documentaries. */
+function gKeys(txt){ const ks=GENRES.filter(g=>g[2].test(txt)).map(g=>g[0]); return ks.includes("mus") ? ks.filter(k=>k!=="doc") : ks; }
+const GSHORT={"Science Fiction":"Sci-Fi","Mystery & Thriller":"Mystery/Thriller","Kids & Family":"Family","Music/Performing Arts":"Music","Concert/Performance":"Concert","Thriller/Suspense":"Thriller","Romantic Comedy":"Romantic comedy","Black Comedy":"Dark comedy"};
+/* The film's own genre words, in its own order, except that genres you filtered by come first and Horror is never the one cut. */
+function gLabel(x, kind, max){ const names=gList(x, kind).filter(n=>!/^(animation|tv movie)$/i.test(n));
+  const key=n=>gKeys(n)[0]; const rank=n=>{ const k=key(n); return S.genres.includes(k)?0:k==="hor"?1:2; };
+  const out=names.map((n,i)=>({n:GSHORT[n]||n, r:rank(n), i})).sort((a,b)=>a.r-b.r||a.i-b.i).map(o=>o.n);
+  return [...new Set(out)].slice(0, max||3).join(" · "); }
 /* No genre chosen shows everything. Once one is chosen, films we have no genre for are left out and counted as hidden. */
 function genreOK(x, kind){ if(!S.genres.length) return true; return gKeys(gText(x, kind)).some(k=>S.genres.includes(k)); }
 /* Animated / Live action for a special event, from TMDB's genres; unknown counts as not matching. */
@@ -712,54 +735,71 @@ function evTypeOK(e){ if(S.type==="all") return true; const tg=e.tm&&e.tm.genres
 /* ---------- Search ----------
    Finds a film by title (or a director or star we know of) across playing now, special events and coming
    releases, ignoring filters so it always turns up. Each result has its ☆ for My list. */
-let srchT=null;
-function openSearch(){ let o=$("srch");
-  if(!o){ o=document.createElement("div"); o.id="srch"; o.setAttribute("role","dialog"); o.setAttribute("aria-label","Search movies");
-    o.innerHTML=`<div class="srchbar"><input id="srchq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search a movie, director or star" aria-label="Search a movie, director or star"><button class="pill" id="srchdone">Done</button></div><div class="srchres" id="srchres"></div>`;
+let srchT=null, srchOpen=false, focusBack=null;
+function goFocus(id){ if(!S.focus) focusBack={y:window.scrollY, mode:S.mode}; S.focus=id; S.mode="show"; render(); window.scrollTo({top:0}); }
+function openSearch(){ if(!DATA) return; let o=$("srch");
+  if(!o){ o=document.createElement("div"); o.id="srch"; o.setAttribute("role","dialog"); o.setAttribute("aria-modal","true"); o.setAttribute("aria-label","Search movies");
+    o.innerHTML=`<div class="srchbar"><input id="srchq" type="search" enterkeyhint="search" autocomplete="off" placeholder="Search a movie, director or star" aria-label="Search a movie, director or star"><button class="pill" id="srchdone">Done</button></div><div class="srchres" id="srchres" aria-live="polite"></div>`;
     document.body.appendChild(o);
     $("srchq").addEventListener("input",()=>{ clearTimeout(srchT); srchT=setTimeout(runSearch,150); });
     $("srchdone").onclick=closeSearch;
-    o.addEventListener("keydown",e=>{ if(e.key==="Escape") closeSearch(); });
     o.addEventListener("click",e=>{ const t=e.target;
       const st=t.closest("[data-star]"); if(st){ e.preventDefault(); e.stopPropagation(); toggleStar(st.dataset.star); runSearch(); return; }
-      const f=t.closest("[data-sfocus]"); if(f){ if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0) return; e.preventDefault(); closeSearch(); if(!S.focus) focusBack={y:window.scrollY, mode:S.mode}; S.focus=f.dataset.sfocus; S.mode="show"; render(); window.scrollTo({top:0}); return; }
-      if(t.closest("[data-sadd]")){ const q=$("srchq").value.trim(); closeSearch(); openMyList(); const d=document.querySelector(".mladd"); if(d){ d.open=true; const f2=$("mladdf"); if(f2){ f2.t.value=q; f2.t.focus(); } } } });
+      const f=t.closest("[data-sfocus]"); if(f){ if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0) return; e.preventDefault(); closeSearch(); goFocus(f.dataset.sfocus); return; }
+      if(t.closest("[data-sadd]")){ const q=t.closest("[data-sadd]").dataset.sadd; closeSearch(); openMyList(); const d=document.querySelector(".mladd"); if(d){ d.open=true; const f2=$("mladdf"); if(f2){ f2.t.value=q; f2.t.focus(); } } } });
   }
-  o.hidden=false; document.documentElement.classList.add("srch-open"); const q=$("srchq"); q.value=""; runSearch(); setTimeout(()=>q.focus(),30);
+  o.hidden=false; srchOpen=true; document.documentElement.classList.add("srch-open");
+  /* The last search stays until you clear it, so you can add several films in a row. */
+  const q=$("srchq"); runSearch(); setTimeout(()=>{ q.focus(); q.select(); },30);
 }
-function closeSearch(){ const o=$("srch"); if(o) o.hidden=true; document.documentElement.classList.remove("srch-open"); }
+function closeSearch(){ const o=$("srch"); if(!o || o.hidden) return; o.hidden=true; srchOpen=false; document.documentElement.classList.remove("srch-open"); const b=$("srchbtn"); if(b) b.focus({preventScroll:true}); }
+document.addEventListener("keydown",e=>{ if(srchOpen && e.key==="Escape") closeSearch(); });
 function runSearch(){
-  const raw=$("srchq").value.trim(), q=normT(raw), ql=raw.toLowerCase(), out=$("srchres");
-  if(q.length<2){ out.innerHTML=`<p class="srhint">Type part of a title, like <b>avatar</b>, or a director or star, like <b>nolan</b>. Search covers what's playing, special events and everything on the release calendar, whatever your filters are set to.</p>`; return; }
-  const today=todayStr(), who=list=>(Array.isArray(list)?list:typeof list==="string"?list.split(/\s*,\s*/):[]).map(x=>typeof x==="string"?x:(x&&x.name)||"").find(n=>n&&n.toLowerCase().includes(ql));
+  const out=$("srchres"); if(!DATA){ out.innerHTML=`<p class="srhint">Loading…</p>`; return; }
+  const raw=$("srchq").value.trim(), q=normT(raw);
+  if(q.length<2){ out.innerHTML=`<p class="srhint">Type part of a title, like <b>avatar</b>, a director or star, like <b>nolan</b>, or a series, like <b>ghibli</b>. Search covers what's playing, special events and everything on the release calendar, whatever your filters are set to.</p>`; return; }
+  const today=todayStr();
+  /* Names arrive as plain strings or as [name, link] pairs. */
+  const nm=x=>typeof x==="string"?x:Array.isArray(x)?String(x[0]||""):(x&&x.name)||"";
+  const who=list=>(Array.isArray(list)?list:typeof list==="string"?list.split(/\s*,\s*/):[]).map(nm).find(n=>n && normT(n).includes(q));
   const fmtRt=n=>n?`${Math.floor(n/60)}h ${pad(n%60)}m`:"";
   const dayTxt=d=>new Date(d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:d.slice(0,4)==String(THIS_YEAR)?undefined:"numeric"});
-  let html="", n=0;
-  /* Playing now */
+  const keyT=t=>normT(plainTitle(t));
   const cnt={}; for(const s of DATA.shows) if(s[1]>=today){ (cnt[s[2]]=cnt[s[2]]||new Set()).add(s[0]); }
-  /* A special showing usually also appears under Special events with its dates; list it there only. */
-  const evT=new Set((DATA.calendar||[]).filter(e=>e.d>=today).map(e=>normT(plainTitle(e.t))));
-  const movs=Object.keys(cnt).map(id=>({id,m:DATA.movies[id]})).filter(x=>x.m && !(x.m.sp && evT.has(normT(plainTitle(x.m.t))))).map(x=>({...x, p:normT(x.m.t).includes(q)?null:(who(x.m.dir)?`Directed by ${who(x.m.dir)}`:who(x.m.st)?`With ${who(x.m.st)}`:false)})).filter(x=>x.p!==false).slice(0,15);
+  const byTitle=new Map(); for(const id in cnt){ const m=DATA.movies[id]; if(m) byTitle.set(keyT(m.t), id); }
+  const why=(titleHit, dirs, stars, series)=>titleHit?null:(who(dirs)?`Directed by ${who(dirs)}`:who(stars)?`With ${who(stars)}`:series&&normT(series).includes(q)?"":false);
+  const showLink=id=>`<a href="${movieHref(id)}" data-sfocus="${esc(id)}">Showtimes at ${cnt[id].size} of your theaters ›</a>`;
+  const more=(n,max)=>n>max?`<p class="srmore">Showing the first ${max} of ${n}. Type more of the name to narrow it down.</p>`:"";
+  let html="", n=0; const shown=new Set();
+  /* Special events, one row per film (a special showing that is also playing links to its showtimes) */
+  const evMap=new Map();
+  for(const e of (DATA.calendar||[])) if(e.d>=today){ const mid=byTitle.get(keyT(e.t)), m=mid&&DATA.movies[mid];
+    const p=why(normT(e.t).includes(q), m&&m.dir, m&&m.st, e.series); if(p===false) continue;
+    const k=keyT(e.t); if(!evMap.has(k)) evMap.set(k,{list:[],p,mid}); evMap.get(k).list.push(e); }
+  const evAllRows=[...evMap.values()].sort((a,b)=>a.list[0].d.localeCompare(b.list[0].d)), evRows=evAllRows.slice(0,20);
+  /* Playing now (specials already listed above are left out here) */
+  const movAll=Object.keys(cnt).map(id=>({id,m:DATA.movies[id]})).filter(x=>x.m && !evMap.has(keyT(x.m.t)))
+    .map(x=>({...x, p:why(normT(x.m.t).includes(q), x.m.dir, x.m.st, x.m.sp)})).filter(x=>x.p!==false), movs=movAll.slice(0,20);
   if(movs.length){ html+=`<div class="srhd">Playing now</div>`;
-    for(const {id,m,p} of movs){ const pt=plainTitle(m.t), mk="m:"+normT(pt); n++;
+    for(const {id,m,p} of movs){ const pt=plainTitle(m.t), mk="m:"+normT(pt); n++; shown.add(keyT(m.t));
       const ds=DATA.shows.filter(s=>s[2]===id && s[1]>=today).map(s=>s[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||today, lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true};
-      const meta=[m.r?`<span class="rate">${esc(m.r)}</span>`:"", fmtRt(m.rt), gLabel(m,"m",2), m.anim===true?"Animated":""].filter(Boolean).join(" · ");
-      html+=`<div class="srow">${starBtn(mk, pt)}<div class="srbody"><a class="srt" href="${movieHref(id)}" data-sfocus="${esc(id)}">${esc(m.t)}</a><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}<a href="${movieHref(id)}" data-sfocus="${esc(id)}">Showtimes at ${cnt[id].size} of your theaters ›</a></div></div></div>`; } }
-  /* Special events, one row per film */
-  const evMap=new Map(); for(const e of (DATA.calendar||[])) if(e.d>=today && normT(e.t).includes(q)){ const k=normT(e.t); if(!evMap.has(k)) evMap.set(k,[]); evMap.get(k).push(e); }
-  const evs=[...evMap.values()].sort((a,b)=>a[0].d.localeCompare(b[0].d)).slice(0,15);
-  if(evs.length){ html+=`<div class="srhd">Special events</div>`;
-    for(const list of evs){ const e=list[0], plain=plainTitle(e.t), ek="e:"+normT(e.t), days=[...new Set(list.map(x=>x.d))].sort(); n++;
+      const meta=[m.r?`<span class="rate">${esc(m.r)}</span>`:"", fmtRt(m.rt), m.anim===true?"Animated":"", gLabel(m,"m",2)].filter(Boolean).join(" · ");
+      html+=`<div class="srow">${starBtn(mk, pt)}<div class="srbody"><a class="srt" href="${movieHref(id)}" data-sfocus="${esc(id)}">${esc(m.t)}</a><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${showLink(id)}</div></div></div>`; }
+    html+=more(movAll.length,20); }
+  if(evRows.length){ html+=`<div class="srhd">Special events</div>`;
+    for(const {list,p,mid} of evRows){ const e=list[0], plain=plainTitle(e.t), ek="e:"+normT(e.t), days=[...new Set(list.map(x=>x.d))].sort(); n++; shown.add(keyT(e.t));
       LISTCAT[ek]={t:plain, d:days[0], lbl:null, r:e.r||null, rt:null, src:e.src||null};
       const meta=[e.r?`<span class="rate">${esc(e.r)}</span>`:"", esc(e.series||""), gLabel(e,"e",2)].filter(Boolean).join(" · ");
-      html+=`<div class="srow">${starBtn(ek, plain)}<div class="srbody"><span class="srt">${esc(e.t)}${e.y&&e.y<THIS_YEAR?` <span class="yr">(${esc(e.y)})</span>`:""}</span><div class="smeta">${meta}</div><div class="smeta">${dayTxt(days[0])}${days.length>1?` + ${days.length-1} more date${days.length>2?"s":""}`:""}${e.src?` · <a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src)?"Tickets":"Event page"}</a>`:""}</div></div></div>`; } }
-  /* Coming releases */
-  const rels=(DATA.releases||[]).filter(r=>r.d>=today).map(r=>{ const d=r.det||{}; return {r, p:normT(r.t).includes(q)?null:(who(d.directors)?`Directed by ${who(d.directors)}`:who(d.stars)?`With ${who(d.stars)}`:false)}; }).filter(x=>x.p!==false).slice(0,25);
+      html+=`<div class="srow">${starBtn(ek, plain)}<div class="srbody"><span class="srt">${esc(e.t)}${e.y&&e.y<THIS_YEAR?` <span class="yr">(${esc(e.y)})</span>`:""}</span><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${dayTxt(days[0])}${days.length>1?` + ${days.length-1} more date${days.length>2?"s":""}`:""}</div><div class="smeta">${mid&&cnt[mid]?showLink(mid):e.src?`<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src)?"Tickets on Fandango":"Event page"} ›</a>`:""}</div></div></div>`; }
+    html+=more(evAllRows.length,20); }
+  /* Coming releases (a re-release already shown as a special event is not repeated) */
+  const relSeen=new Set(), relAll=(DATA.releases||[]).filter(r=>r.d>=today && !(r.k==="rerelease" && shown.has(keyT(r.t))) && !relSeen.has(keyT(r.t)+"|"+r.d) && relSeen.add(keyT(r.t)+"|"+r.d)).map(r=>{ const d=r.det||{}; return {r, p:why(normT(r.t).includes(q), d.directors, d.stars, null)}; }).filter(x=>x.p!==false), rels=relAll.slice(0,30);
   if(rels.length){ html+=`<div class="srhd">Coming soon</div>`;
-    for(const {r,p} of rels){ n++; const when=r.lbl?`${esc(r.lbl)} <small>date not set</small>`:`Opens ${dayTxt(r.d)}`;
-      html+=relRow(r, `<span class="evsum">${when}${p?" · "+esc(p):""}</span>`, ""); } }
-  if(!n) html+=`<p class="srhint">Nothing playing or on the release calendar matches “${esc(raw)}”. It may not have a date yet.</p>`;
-  html+=`<button class="pill srchadd" data-sadd>+ Add ${n?"a different movie":`“${esc(raw)}”`} to My list yourself</button>`;
+    for(const {r,p} of rels){ n++; const when=r.lbl?`${esc(r.lbl)} <small>date not set</small>`:/expands/i.test(r.scope||"")?`Expands wide ${dayTxt(r.d)}`:r.k==="arthouse"||r.k==="limited"?`Opens in limited release ${dayTxt(r.d)}`:r.k==="rerelease"?`Re-release ${dayTxt(r.d)}`:`Opens ${dayTxt(r.d)}`;
+      html+=relRow(r, `<span class="evsum">${when}${p?" · "+esc(p):""}</span>`, ""); }
+    html+=more(relAll.length,30); }
+  if(!n) html+=`<p class="srhint">Nothing playing or on the release calendar matches “${esc(raw)}”. It may not have a release date yet.</p>`;
+  html+= n ? `<button class="pill srchadd" data-sadd="">Not here? Add a movie to My list by hand</button>` : `<button class="pill srchadd" data-sadd="${esc(raw)}">Add “${esc(raw)}” to My list by hand</button>`;
   out.innerHTML=html;
 }
 document.addEventListener("click",e=>{ if(e.target.closest("#srchbtn")) openSearch(); });
@@ -785,7 +825,7 @@ function renderSoon(){
   const on=k=>S.soon.includes(k);
   const rateOK=e=>ratingOK({r:e.r,csm:e.csm,g:e.g,sp:e.series,fam:e.fam}, true);
   const evAll=on("special")?(DATA.calendar||[]).filter(e=>e.d>=today):[];
-  const evs=evAll.filter(e=>rateOK(e) && genreOK(e,"e") && evTypeOK(e)), evHidden=evAll.length-evs.length;
+  const evs=evAll.filter(e=>rateOK(e) && genreOK(e,"e") && evTypeOK(e)); let evHidden=evAll.length-evs.length;
   const nrHid=(S.who==="family" && !S.showNR) ? evAll.filter(e=>(!e.r||e.r==="NR") && !rateOK(e)).length : 0;
   // Coming films follow the same Family / Grown-ups choice once they have a rating; unrated ones always show.
   const relOK=r=>{ const d=r.det; if(d && d.rating && !S.ratings.has(d.rating)) return false;
@@ -793,11 +833,15 @@ function renderSoon(){
     return genreOK(r,"r"); };
   /* Re-releases from the release calendar ride with special events. */
   const relAll=(DATA.releases||[]).filter(r=>r.d>=today && on(r.k==="rerelease"?"special":r.k));
-  const movies=relAll.filter(relOK), relHidden=relAll.length-movies.length;
+  const movies=relAll.filter(relOK);
   const nNew=movies.filter(r=>r.k!=="rerelease").length, nRe=movies.length-nNew;
+  /* New films and re-releases are counted in their own groups, shown and hidden alike. */
+  const relHidden=relAll.filter(r=>r.k!=="rerelease").length-nNew, reHidden=relAll.filter(r=>r.k==="rerelease").length-nRe;
+  evHidden+=reHidden;
   const parts=[];
   if(nNew||relHidden) parts.push(`${nNew} new movies`+(relHidden?` (${relHidden} more hidden ${S.who==="family"&&S.type==="all"&&!S.genres.length?"in Family Mode":"by your filters"})`:""));
   if(on("special")) parts.push(`${evs.length+nRe} special events`+(evHidden?(S.who==="family"&&!S.genres.length&&S.type==="all"?` (${evHidden} more hidden in Family Mode${nrHid?` · <button class="linkbtn" data-shownr>Show the ${nrHid} unrated</button>`:""})`:` (${evHidden} more hidden by your filters)`):""));
+  if(parts.length && (S.genres.length||S.type!=="all") && (!on("arthouse")||!on("limited"))) parts.push(`<span class="cnthint">Turn on ${[!on("arthouse")&&"Arthouse &amp; awards",!on("limited")&&"Other limited"].filter(Boolean).join(" and ")} above for more</span>`);
   $("count").innerHTML=parts.length?parts.join(" · "):"Pick at least one thing to show above.";
 
   const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
@@ -895,14 +939,14 @@ function toast(msg){ let t=$("toast"); if(!t){ t=document.createElement("div"); 
   t.innerHTML=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),5000); }
 /* "Open My list" from anywhere: jump to Coming soon with My list showing. */
 function openMyList(){ S.mode="list"; S.focus=null; cmp=null; const t=$("toast"); if(t) t.classList.remove("show"); render(); window.scrollTo({top:0}); }
-document.addEventListener("click",e=>{ if(e.target.closest("[data-openlist]")){ e.preventDefault(); openMyList(); } });
+document.addEventListener("click",e=>{ if(e.target.closest("[data-openlist]")){ e.preventDefault(); closeSearch(); openMyList(); } });
 function starBtn(k, t){ const on=inList(k, t); return `<button class="star${on?" on":""}" data-star="${esc(k)}" aria-pressed="${on}" title="${on?"On My list":"Add to My list"}" aria-label="${on?"Remove from":"Add to"} My list">${on?"★":"☆"}</button>`; }
 function toggleStar(k){
   if(!L.items[k]){ const c=LISTCAT[k], other=c&&keyByTitle(c.t); if(other) k=other; }
   if(L.items[k]){ delete L.items[k]; L.hype=L.hype.filter(x=>x!==k); L.after=L.after.filter(x=>x!==k); const t=$("toast"); if(t) t.classList.remove("show"); }
   else { const c=LISTCAT[k]; if(!c) return; const first=!listCount();
     L.items[k]={...c, seen:false, th:false, added:todayStr()};
-    toast(`Added to ★ My list${first?", the last tab at the top":""}<button class="toastbtn" data-openlist>Open My list</button>`); }
+    toast(`Added to ★ My list${first&&!srchOpen?", the last tab at the top":""}<button class="toastbtn" data-openlist>Open My list</button>`); }
   saveList(); render();
 }
 /* Keep saved titles, dates and ratings current while the film is still on the release calendar. */
@@ -1060,7 +1104,7 @@ function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
 function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
 function filmBlock(mid, groups){
   const m=DATA.movies[mid];
-  const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`<b class="rtm">${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m</b>`:"Runtime not announced", m.anim===true?"Animated":m.anim===false?"Live action":null, gLabel(m,"m")||null].filter(Boolean).join(" · ");
+  const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`<b class="rtm">${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m</b>`:"Runtime not announced", m.anim===true?"Animated":(m.anim===false && !gLabel(m,"m"))?"Live action":null, gLabel(m,"m")||null].filter(Boolean).map(x=>`<span class="nb">${x}</span>`).join(" · ");
   const badges=m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"";
   const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Metacritic</small></span>`;
   const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Ages</small></span>`;
@@ -1235,7 +1279,6 @@ const setPanel=open=>{$("panel").hidden=!open;$("fbtn").setAttribute("aria-expan
 $("fbtn").onclick=()=>setPanel($("panel").hidden);
 $("done").onclick=()=>setPanel(false);
 /* Remember where you were before opening one movie, so "Show all movies" brings you back to the same spot and tab. */
-let focusBack=null;
 $("unfocus").onclick=()=>{ const back=focusBack; focusBack=null; S.focus=null;
   { const u=new URLSearchParams(location.search); if(u.has("movie")){ u.delete("movie"); history.replaceState(null,"",location.pathname+(u.toString()?"?"+u:"")); } } if(back) S.mode=back.mode; render();
   if(back) requestAnimationFrame(()=>window.scrollTo({top:back.y})); else window.scrollTo({top:0}); };
@@ -1248,6 +1291,7 @@ bind("mc","mc",Number); bind("age","age",Number); bind("th","th",String); bind("
 bind("osc","osc"); bind("keepsp","keepsp"); bind("hidepast","hidepast");
 if(DATA.updated){ const u=new Date(DATA.updated); $("fresh").textContent=`Updated ${u.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}, ${u.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} · through ${dayLabel(DAYS[DAYS.length-1]).w} ${dayLabel(DAYS[DAYS.length-1]).md}`; }
 $("who").addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); render();});
+$("fam13c").onchange=e=>{ setFam13(e.target.checked); if(S.who!=="grown") setWho("family"); render(); };
 $("clearbtn").onclick=clearFilters; $("clearbtn2").onclick=clearFilters;
 $("out").addEventListener("click",e=>{ if(e.target.closest("[data-clear]")) clearFilters(); });
 $("count").addEventListener("click",e=>{ if(e.target.closest("[data-shownr]")){ S.showNR=true; render(); } });
@@ -1257,12 +1301,15 @@ else { setWho("family"); render(); askWho(); }
 }
 // Asked each time the site is opened (once per browser session), so a shared phone lands in the right mode.
 function askWho(){
-  const fam=[...DATA.defaultRatings].sort((a,b)=>RATINGS.indexOf(a)-RATINGS.indexOf(b)).join(" and ");
+  const famTxt=()=>{ const r=famRatings(); return r.length>1 ? r.slice(0,-1).join(", ")+" and "+r[r.length-1] : r.join(""); };
+  const can13=!DATA.defaultRatings.includes("PG-13");
   const bg=document.createElement("div"); bg.className="whoask-bg";
   bg.innerHTML=`<div class="whoask" role="dialog" aria-modal="true" aria-labelledby="whoq"><div class="brand">Rich's <span>One&#8209;Stop Showtimes</span></div><h2 id="whoq">Who's watching?</h2>
-    <div class="choices"><button type="button" data-who="family"><b>Family</b><small>${esc(fam)}, plus family-friendly unrated films</small></button>
+    <div class="choices"><button type="button" data-who="family"><b>Family</b><small id="famtxt">${esc(famTxt())}, plus family-friendly unrated films</small></button>
     <button type="button" data-who="grown"><b>Grown-ups</b><small>Everything, all ratings</small></button></div>
-    <div class="by">You can switch any time at the top of the page.</div></div>`;
+    ${can13?`<label class="fam13 inask"><input type="checkbox" id="fam13" ${fam13()?"checked":""}><span>Our family also watches PG-13<small>Remembered on this phone</small></span></label>`:""}
+    <div class="by">Either way, <b>Filters</b> can narrow by genre, critics' score, Common Sense age, theater and start time. You can switch between Family and Grown-ups any time at the top of the page.</div></div>`;
+  bg.addEventListener("change",e=>{ if(e.target.id==="fam13"){ setFam13(e.target.checked); const t=bg.querySelector("#famtxt"); if(t) t.textContent=famTxt()+", plus family-friendly unrated films"; } });
   bg.addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); bg.remove(); render(); maybeTour();});
   document.body.appendChild(bg); bg.querySelector("button").focus();
 }
