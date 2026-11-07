@@ -71,11 +71,15 @@ h1 span{color:var(--accent)}
 
 /* Sticky bar */
 .bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px;border-bottom:1px solid var(--line);display:grid;gap:8px}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--chip);border-radius:10px;padding:3px;gap:3px}
-.tabs button{border:0;background:transparent;color:var(--fg);font-weight:700;font-size:.88rem;padding:8px 4px;min-height:40px;white-space:nowrap;border-radius:8px;cursor:pointer}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1.2fr .95fr;background:var(--chip);border-radius:10px;padding:3px;gap:3px}
+.tabs button{border:0;background:transparent;color:var(--fg);font-weight:700;font-size:.84rem;padding:8px 2px;min-height:40px;white-space:nowrap;border-radius:8px;cursor:pointer;position:relative}
 .tabs button[aria-selected="true"]{background:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.18)}
 .tabs button[data-mode="spec"][aria-selected="true"]{color:var(--accent)}
 .tabs button[data-mode="soon"][aria-selected="true"]{color:var(--amber)}
+.tabs button[data-mode="list"]{color:#a07800}
+.tabs .cnt{position:absolute;top:1px;right:2px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:999px;background:#d4a017;color:#fff;font-size:.66rem;line-height:16px;font-weight:700}
+.tabs .cnt.pulse{animation:pulse .6s}
+@keyframes pulse{50%{transform:scale(1.35)}}
 .row{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
 .row::-webkit-scrollbar{display:none}
 button.day{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:10px;padding:5px 11px;text-align:center;cursor:pointer;line-height:1.1}
@@ -97,11 +101,9 @@ button.fbtn[aria-expanded="true"]{background:var(--fg);color:var(--bg);border-co
 button.pill{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 13px;font-weight:600;font-size:.88rem;cursor:pointer}
 button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 /* My list */
-.star{all:unset;cursor:pointer;font-size:1.15rem;line-height:1;color:var(--muted);padding:2px 4px;margin-left:-4px;min-width:22px;text-align:center}
+.star{all:unset;cursor:pointer;font-size:1.15rem;line-height:1;color:var(--muted);margin-left:-6px;min-width:32px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle}
 .star.on{color:#d4a017}
-.star.demo{cursor:default;display:inline}
-#relkinds .minechip{border-color:#d4a017}
-#relkinds .minechip[aria-pressed="false"]{color:#a07800}
+.star.demo{cursor:default;display:inline;min-height:0;min-width:0;margin:0}
 .mlhead{display:flex;flex-direction:column;gap:10px;margin:8px 0 6px}
 .mllink{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.85rem;background:var(--surface)}
 .mllink b{display:block;margin-bottom:2px}
@@ -146,7 +148,6 @@ button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-col
 .cmpbtns .pill{max-width:46%;white-space:normal;min-height:44px}
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(120%);background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:.88rem;max-width:min(92vw,420px);box-shadow:0 6px 18px rgba(0,0,0,.3);transition:transform .25s;z-index:60;text-align:center}
 #toast.show{transform:translateX(-50%) translateY(0)}
-.mlquick{all:unset;cursor:pointer;font-size:.8rem;font-weight:700;color:#a07800;white-space:nowrap;padding:6px 4px}
 .toastbtn{all:unset;cursor:pointer;display:block;margin:8px auto 0;padding:6px 14px;border-radius:999px;background:var(--bg);color:var(--fg);font-weight:700;font-size:.85rem}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .pgrid label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
@@ -366,8 +367,9 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="bar">
   <div class="tabs" role="tablist" aria-label="View">
     <button role="tab" data-mode="show" id="tab-show">Showtimes</button>
-    <button role="tab" data-mode="spec" id="tab-spec">★ Specials</button>
+    <button role="tab" data-mode="spec" id="tab-spec">Specials</button>
     <button role="tab" data-mode="soon" id="tab-soon">Coming soon</button>
+    <button role="tab" data-mode="list" id="tab-list">★ My list<span class="cnt" id="listcnt" hidden></span></button>
   </div>
   <div class="row" id="days" role="group" aria-label="Day"></div>
   <div class="row" id="relkinds" role="group" aria-label="What to show" hidden></div>
@@ -495,7 +497,7 @@ async function fetchData(){
 
 
 const RATINGS = ["G","PG","PG-13","R","NC-17","NR"];
-const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:"all", view:"theater", mc:0, age:99, th:"all", after:0, osc:false, keepsp:true, hidepast:true, soon:["special","wide"], who:"family", showNR:false, mine:false, listView:"date"};
+const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:"all", view:"theater", mc:0, age:99, th:"all", after:0, osc:false, keepsp:true, hidepast:true, soon:["special","wide"], who:"family", showNR:false, listView:"date"};
 const $=id=>document.getElementById(id);
 
 const PREF_KEY="mfs2-"+CITY;
@@ -598,20 +600,20 @@ function render(){
   const soon = S.mode==="soon";
   $("relkinds").hidden = !soon;
   if(!Array.isArray(S.soon)) S.soon=["special","wide"];
-  pills($("relkinds"), [["mine",`★ My list${listCount()?` (${listCount()})`:""}`],["special","★ Special events"],["wide","Wide release"],["arthouse","Arthouse & awards"],["limited","Other limited"]], v=>v==="mine"?S.mine:(!S.mine&&S.soon.includes(v)), v=>{ if(v==="mine"){ S.mine=!S.mine; cmp=null; window.scrollTo({top:0}); return; } if(S.mine){ S.mine=false; if(S.soon.includes(v)) return; } S.soon=S.soon.includes(v)?S.soon.filter(x=>x!==v):[...S.soon,v];});
-  $("relkinds").firstChild && $("relkinds").firstChild.classList.add("minechip");
+  pills($("relkinds"), [["special","Special events"],["wide","Wide release"],["arthouse","Arthouse & awards"],["limited","Other limited"]], v=>S.soon.includes(v), v=>{ S.soon=S.soon.includes(v)?S.soon.filter(x=>x!==v):[...S.soon,v];});
   pills($("ratings"), RATINGS.map(r=>[r,r]), v=>S.ratings.has(v), v=>{S.ratings.has(v)?S.ratings.delete(v):S.ratings.add(v); S.who="custom"; S.showNR=false;});
   pills($("types"), [["all","All"],["anim","Animated"],["live","Live action"]], v=>v===S.type, v=>{S.type=v;});
   pills($("views"), [["theater","Theater"],["movie","Movie"]], v=>v===S.view, v=>{S.view=v;});
   $("viewbox").hidden = S.mode!=="show";
   $("mcv").textContent=S.mc?S.mc+"+":"any";
   $("fsum").textContent=filterSummary();
-  /* A way back to My list from Showtimes and Specials once there's something on it. */
-  { let ml=$("mlquick"); if(!ml){ ml=document.createElement("button"); ml.id="mlquick"; ml.className="mlquick"; ml.dataset.openlist=""; $("fsum").after(ml); }
-    const n=listCount(); ml.hidden=!n || S.mode==="soon"; ml.textContent=`★ My list (${n})`; }
+  { const n=listCount(), c=$("listcnt"); if(c){ if(c.textContent && c.textContent!==String(n)){ c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse"); } c.hidden=!n; c.textContent=n||""; } }
+  const lst=S.mode==="list";
+  $("filterline").hidden=lst; if(lst){ $("panel").hidden=true; $("fbtn").setAttribute("aria-expanded","false"); }
   requestAnimationFrame(()=>document.documentElement.style.setProperty("--barh", document.querySelector(".bar").offsetHeight+"px"));
   $("clearbtn").hidden=!filtersActive();
   save();
+  if(lst){ $("focusbar").hidden=true; renderMyList(); return; }
   if(S.mode==="soon"){ $("focusbar").hidden=true; renderSoon(); return; }
   renderShows();
 }
@@ -645,7 +647,7 @@ function renderShows(){
   // Specials strip for the selected day
   const spm=[...films].filter(id=>DATA.movies[id].sp).sort(byScore);
   if(spm.length){
-    html+=`<div class="strip${spm.length>1?" many":""}"><h3>★ Special showings ${S.day===today?"today, ":"on "}${dayLabel(S.day).w} ${dayLabel(S.day).md}${spm.length>1?`<span class="more">${spm.length} showings · swipe ›</span>`:""}</h3><div class="scroll">`+
+    html+=`<div class="strip${spm.length>1?" many":""}"><h3>Special showings ${S.day===today?"today, ":"on "}${dayLabel(S.day).w} ${dayLabel(S.day).md}${spm.length>1?`<span class="more">${spm.length} showings · swipe ›</span>`:""}</h3><div class="scroll">`+
       spm.map(id=>{const m=DATA.movies[id]; const r=rows.filter(x=>x.m===id); const th=[...new Set(r.map(x=>DATA.theaters[x.th].short))]; const first=r.map(x=>toMin(x.t)).sort((a,b)=>a-b)[0];
         return `<a class="spcard" href="${movieHref(id)}" data-focus="${id}"><b>${esc(m.t)}</b><small>${esc(m.sp)} · ${esc(m.r)}</small><small>${th.length>1?th.length+" theaters":esc(th[0])} · from ${fmt(first)}</small></a>`;}).join("")+`</div></div>`;
   }
@@ -687,7 +689,6 @@ function relRow(r, tagHtml, dayHtml){
 }
 // Coming soon: new movies by opening week, plus special events at this family's theaters, in one list.
 function renderSoon(){
-  if(S.mine) return renderMyList();
   const today=todayStr();
   const on=k=>S.soon.includes(k);
   const rateOK=e=>ratingOK({r:e.r,csm:e.csm,g:e.g,sp:e.series,fam:e.fam}, true);
@@ -720,7 +721,7 @@ function renderSoon(){
   for(const r of movies){ const g=group(r.d, r.lbl); if(r.k==="rerelease" && g.events.some(e=>keyT(e.t)===keyT(r.t))) continue; g.movies.push(r); }
 
   const ko={wide:0,arthouse:1,limited:2,rerelease:3};
-  const tag=r=>r.k==="rerelease"?`<span class="tag">★ Re-release</span>`:r.k==="wide"?`<span class="tag wide">${/expands/i.test(r.scope)?"Expands wide":"Wide"}</span>`:r.k==="arthouse"?`<span class="tag art">${/oscar/i.test(r.scope)?"Oscar-qualifying run":"Limited"}</span>`:`<span class="tag lim">Limited</span>`;
+  const tag=r=>r.k==="rerelease"?`<span class="tag">Re-release</span>`:r.k==="wide"?`<span class="tag wide">${/expands/i.test(r.scope)?"Expands wide":"Wide"}</span>`:r.k==="arthouse"?`<span class="tag art">${/oscar/i.test(r.scope)?"Oscar-qualifying run":"Limited"}</span>`:`<span class="tag lim">Limited</span>`;
   const order=t=>{const i=FAV_ORDER.indexOf(t);return i<0?99:i;};
   const tagCls=s=>/ghibli/i.test(s)?"ghibli":/fathom|met opera/i.test(s)?"fathom":/concert|live/i.test(s)?"live":"";
   const dayTxt=d=>new Date(d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
@@ -735,7 +736,7 @@ function renderSoon(){
       html+=relRow(r, tag(r), day);
     }
     if(g.events.length){
-      if(g.movies.length) html+=`<div class="subhd">★ Special events this week</div>`;
+      if(g.movies.length) html+=`<div class="subhd">Special events this week</div>`;
       // One row per film for the week, however many days and theaters it plays; tap to see the schedule.
       const byFilm=new Map();
       for(const e of g.events.sort((a,b)=>a.d.localeCompare(b.d))){ const k=e.t+"|"+(e.y||""); if(!byFilm.has(k)) byFilm.set(k,[]); byFilm.get(k).push(e); }
@@ -782,7 +783,7 @@ async function loadList(){
     /* Take the id out of the address bar so sharing the page doesn't share the list. */
     u.delete("list"); history.replaceState(null,"",location.pathname+(u.toString()?"?"+u:"")); }
   else LIST_ID=lsGet(LIST_KEY);
-  if(LIST_ID){ try{ const d=await rpc("get_list",{p_id:LIST_ID}); if(d && d.items){ L={v:1,items:d.items||{},hype:d.hype||[],after:d.after||[]}; if(fromLink){ S.mine=true; S.mode="soon"; } } else LIST_ID=null; }catch(e){ console.warn("list load",e); } }
+  if(LIST_ID){ try{ const d=await rpc("get_list",{p_id:LIST_ID}); if(d && d.items){ L={v:1,items:d.items||{},hype:d.hype||[],after:d.after||[]}; if(fromLink){ S.mode="list"; } } else LIST_ID=null; }catch(e){ console.warn("list load",e); } }
   listReady=true;
 }
 function saveList(){
@@ -801,15 +802,15 @@ function listLink(){ return location.origin+location.pathname+"?list="+encodeURI
 function toast(msg){ let t=$("toast"); if(!t){ t=document.createElement("div"); t.id="toast"; t.setAttribute("role","status"); document.body.appendChild(t); }
   t.innerHTML=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),5000); }
 /* "Open My list" from anywhere: jump to Coming soon with My list showing. */
-function openMyList(){ S.mode="soon"; S.focus=null; S.mine=true; cmp=null; const t=$("toast"); if(t) t.classList.remove("show"); render(); window.scrollTo({top:0}); }
+function openMyList(){ S.mode="list"; S.focus=null; cmp=null; const t=$("toast"); if(t) t.classList.remove("show"); render(); window.scrollTo({top:0}); }
 document.addEventListener("click",e=>{ if(e.target.closest("[data-openlist]")){ e.preventDefault(); openMyList(); } });
 function starBtn(k, t){ const on=inList(k, t); return `<button class="star${on?" on":""}" data-star="${esc(k)}" aria-pressed="${on}" title="${on?"On My list":"Add to My list"}" aria-label="${on?"Remove from":"Add to"} My list">${on?"★":"☆"}</button>`; }
 function toggleStar(k){
   if(!L.items[k]){ const c=LISTCAT[k], other=c&&keyByTitle(c.t); if(other) k=other; }
-  if(L.items[k]){ delete L.items[k]; L.hype=L.hype.filter(x=>x!==k); L.after=L.after.filter(x=>x!==k); }
+  if(L.items[k]){ delete L.items[k]; L.hype=L.hype.filter(x=>x!==k); L.after=L.after.filter(x=>x!==k); const t=$("toast"); if(t) t.classList.remove("show"); }
   else { const c=LISTCAT[k]; if(!c) return; const first=!listCount();
     L.items[k]={...c, seen:false, th:false, added:todayStr()};
-    toast(`Added to My list${first?". It also gives you a private link to open it on any device.":""}<button class="toastbtn" data-openlist>Open My list</button>`); }
+    toast(`Added to ★ My list${first?", the last tab at the top":""}<button class="toastbtn" data-openlist>Open My list</button>`); }
   saveList(); render();
 }
 /* Keep saved titles, dates and ratings current while the film is still on the release calendar. */
@@ -858,10 +859,10 @@ function renderMyList(){
   $("count").innerHTML=keys.length?`${keys.length} on your list · ${seenN} seen`:"Your list is empty";
   const view=S.listView||"date";
   const hypeRank=k=>{ const i=L.hype.indexOf(k); return i<0?null:i+1; }, afterRank=k=>{ const i=L.after.indexOf(k); return i<0?null:i+1; };
-  let html=`<div class="mlhead">`;
-  if(!keys.length) html+=addForm()+`<div class="mlempty"><b>Nothing here yet.</b> Tap the <span class="star demo">☆</span> next to any movie or special event on Coming soon to add it. Your list sorts itself by release date, and you can rank it by how much you're looking forward to each one.</div>`;
+  let html=`<div class="mlhead">`, linkBox="";
+  if(!keys.length) html+=addForm()+`<div class="mlempty"><b>Nothing here yet.</b> Tap the <span class="star demo">☆</span> next to any movie on Showtimes, Specials or Coming soon to add it, or use the form above for one that isn't listed yet. Your list sorts itself by release date, and you can rank it by how much you're looking forward to each one.</div>`;
   else {
-    html+= LIST_ID ? `<div class="mllink"><div><b>Your private list link</b> Bookmark it or text it to yourself to open this list on any device. Anyone with the link can see and change the list.</div><button class="pill" data-copylist>Copy my list link</button></div>`
+    linkBox= LIST_ID ? `<div class="mllink"><div><b>Your private list link</b> Bookmark it or text it to yourself to open this list on any device. Anyone with the link can see and change the list.</div><button class="pill" data-copylist>Copy my list link</button></div>`
                    : `<div class="mllink"><div>Saving your list…</div></div>`;
     const dated=items.filter(i=>i.d && !i.lbl && !i.now && !i.seen && i.d>=todayStr());
     html+=`<div class="mltabs" role="group" aria-label="List view">${[["date","By date"],["hype","Most anticipated"],["after","After seeing"]].map(([v,l])=>`<button class="pill" data-lview="${v}" aria-pressed="${view===v}">${l}</button>`).join("")}</div>`;
@@ -879,7 +880,7 @@ function renderMyList(){
     const ranks= it.seen&&ar ? `<span class="rk after">${hr?`Anticipated #${hr} → `:""}Seen #${ar}</span>` : hr?`<span class="rk">#${hr} anticipated</span>`:"";
     const cal=it.d && !it.lbl && !it.now && it.d>=todayStr() && !it.seen ? `<a href="${icsHref([it])}" download="${fileName(it.t)}">📅 Calendar</a><a href="${gcalHref(it)}" target="_blank" rel="noopener">Google Calendar</a>`:"";
     return `<div class="mlrow" data-k="${esc(it.k)}">${extra}<div class="mlmain"><div class="mltitle">${esc(it.t)}</div><div class="facts">${facts}</div>${ranks?`<div class="rks">${ranks}</div>`:""}
-      ${compact?"":np?`<a class="np" href="${movieHref(np.id)}" data-focus="${np.id}">▶ Now playing at ${np.n} of your theater${np.n>1?"s":""}</a>${np.m.tm?homeShort(np.m):""}`:""}
+      ${compact?"":np?`<a class="np" href="${movieHref(np.id)}" data-focus="${np.id}">▶ Now playing at ${np.n} of your theaters</a>${np.m.tm?homeShort(np.m):""}`:""}
       ${compact?"":`<div class="mlctl"><label><input type="checkbox" data-seen="${esc(it.k)}"${it.seen?" checked":""}> Seen it</label>${it.seen?`<label><input type="checkbox" data-inth="${esc(it.k)}"${it.th?" checked":""}> In the theater</label>`:""}${cal}<button class="linkbtn rm" data-rm="${esc(it.k)}">Remove</button></div>`}</div></div>`; };
 
   if(view==="date"){
@@ -894,9 +895,9 @@ function renderMyList(){
     html+=`<p class="mlhint">${view==="hype"?"Drag ☰ (or use the arrows) to put these in order of how much you're looking forward to them.":"Your ranking of the movies you've seen. Checking “Seen it” asks a quick question or two to slot a movie in; drag to adjust."}</p>`;
     html+=`<div class="rankl" data-order="${view}">`+ranked.map((it,i)=>row(it,`<div class="rkctl"><span class="rknum">${i+1}</span><button class="grip" data-grip aria-label="Drag to reorder">☰</button><button class="arr" data-mv="-1" aria-label="Move up">▲</button><button class="arr" data-mv="1" aria-label="Move down">▼</button></div>`, true)).join("")+`</div>`;
     if(rest.length) html+=`<div class="subhd">Not ranked yet</div>`+rest.map(it=>row(it,`<div class="rkctl"><button class="pill rankit" data-rankit="${esc(it.k)}">Rank</button></div>`, true)).join("");
-    if(!pool.length) html+=`<div class="mlempty">${view==="after"?"Check “Seen it” on a movie and it will show up here.":"Add movies with the ☆ on Coming soon."}</div>`;
+    if(!pool.length) html+=`<div class="mlempty">${view==="after"?"Check “Seen it” on a movie and it will show up here.":"Add movies with the ☆ on Showtimes, Specials or Coming soon."}</div>`;
   }
-  $("out").innerHTML=html;
+  $("out").innerHTML=html+linkBox;
 }
 /* Ranking after seeing: a few "which did you like more?" taps place a newly seen movie (binary search). */
 function startCompare(k){ L.after=L.after.filter(x=>x!==k&&L.items[x]&&L.items[x].seen); if(!L.after.length){ L.after=[k]; cmp=null; saveList(); return; }
@@ -988,7 +989,7 @@ function filmBlock(mid, groups){
      ${m.st.length?`<div><b>Starring</b>${people(m.st)}</div>`:""}
      ${links}</div></details>`
      : links;
-  const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
+  const spBanner = m.sp ? `<div class="spflag">Special showing<span>${esc(m.sp)}</span></div>` : "";
   return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3>${(()=>{ const pt=plainTitle(m.t), mk="m:"+normT(m.t); if(!LISTCAT[mk]){ const ds=DATA.shows.filter(x=>x[2]===mid).map(x=>x[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||todayStr(), lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true}; } return starBtn(mk, pt); })()}<a class="ttl" href="${movieHref(mid)}" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</a>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
@@ -997,12 +998,12 @@ function filmBlock(mid, groups){
 const TOUR=[
   {center:true, next:"Take the tour", title:"Rich's One-Stop Showtimes", text:"<i class='tagline'>Going to the movies really shouldn't be this hard.</i>Every movie at your favorite theaters on one page, filtered to the ratings you want (e.g., PG only), with critics' scores, age guides, trailers, and the time you'll walk out.<br><br>Richard built this because he was sick of checking five different sites to answer three questions: Is it any good? Is it right for kids of different ages? Is it playing at a good theater?<br><br>Built for families, but adaptable to everyone.<span class='madeby'>Created by Richard Magann</span>"},
   {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows G and PG movies, plus unrated ones that look family-friendly. <b>Grown-ups</b> shows everything. Switch any time."},
-  {sel:".tabs", title:"Three tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>★ Specials</b>: this week's can't-miss one-off and classic screenings. Think Back to the Future on the big screen again!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead."},
+  {sel:".tabs", title:"Four tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>Specials</b>: this week's can't-miss one-off and classic screenings. Think Back to the Future on the big screen again!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead.<br><b>★ My list</b>: movies you've starred (☆), by date, with rankings and calendar reminders."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
   {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Filters start fresh each visit; how you group the list and which theaters you show are remembered on this device."},
   {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie, today and on the days ahead."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
-  {sel:"#relkinds", sel2:"#tab-soon", mode:"soon", title:"Coming soon: choose what to see", text:"You're now on the <b>Coming soon</b> tab, which looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap the <b>☆</b> next to any movie to add it to <b>★ My list</b>, your own release calendar that you can rank and add to your phone's calendar. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
+  {sel:"#relkinds", sel2:"#tab-soon", mode:"soon", title:"Coming soon: choose what to see", text:"You're now on the <b>Coming soon</b> tab, which looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap the <b>☆</b> next to any movie to add it to <b>★ My list</b> (the last tab), your own release calendar that you can rank and add to your phone's calendar. The ☆ works on Showtimes and Specials too. Tap a chip to turn a group on or off. <b>Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
   {sel:"#tourbtn", title:"Want this for your city?", text:"Request your own page, set up with your favorite theaters and ratings. Fill out a short form and Richard will make it happen!<br><br>Tap ? any time to see this tour again.", cta:true}
 ];
 let tourEls=null, tourI=0;
