@@ -97,6 +97,47 @@ button.fbtn[aria-expanded="true"]{background:var(--fg);color:var(--bg);border-co
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 button.pill{border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:999px;padding:6px 13px;font-weight:600;font-size:.88rem;cursor:pointer}
 button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+/* My list */
+.star{all:unset;cursor:pointer;font-size:1.15rem;line-height:1;color:var(--muted);padding:2px 4px;margin-left:-4px;min-width:22px;text-align:center}
+.star.on{color:#d4a017}
+.star.demo{cursor:default;display:inline}
+#relkinds .minechip{border-color:#d4a017}
+#relkinds .minechip[aria-pressed="false"]{color:#a07800}
+.mlhead{display:flex;flex-direction:column;gap:10px;margin:8px 0 6px}
+.mllink{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.85rem;background:var(--surface)}
+.mllink b{display:block;margin-bottom:2px}
+.mllink .pill{white-space:nowrap;flex:none}
+.mltabs{display:flex;gap:6px;flex-wrap:wrap}
+.mltabs .pill{font-size:.84rem}
+.mlcal a,.calbtn{font-weight:600;color:var(--accent);text-decoration:none}
+.mlempty{padding:14px;border:1px dashed var(--line);border-radius:10px;font-size:.9rem;line-height:1.45}
+.mlmonth{margin-top:14px}
+.mlrow{display:flex;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);background:var(--bg)}
+.mlrow.dragging{opacity:.85;box-shadow:0 4px 14px rgba(0,0,0,.25);position:relative;z-index:5}
+.mlmain{flex:1;min-width:0}
+.mltitle{font-weight:700;font-size:1.02rem}
+.rks{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.rk{font-size:.75rem;font-weight:700;border:1px solid var(--line);border-radius:999px;padding:1px 8px}
+.rk.after{border-color:var(--accent);color:var(--accent)}
+.np{display:inline-block;margin-top:5px;font-size:.85rem;font-weight:700;color:var(--accent);text-decoration:none}
+.mlctl{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin-top:6px;font-size:.85rem}
+.mlctl label{display:inline-flex;gap:5px;align-items:center;cursor:pointer;min-height:32px}
+.mlctl input{width:18px;height:18px}
+.mlctl a{color:var(--accent);font-weight:600;text-decoration:none;min-height:32px;display:inline-flex;align-items:center}
+.mlctl .rm{color:var(--muted)}
+.rkctl{display:grid;grid-template-columns:auto auto;align-items:center;justify-items:center;gap:0 2px;flex:none;width:58px;align-self:center}
+.rkctl .rankit{grid-column:1 / -1}
+.rknum{font-weight:800;font-size:1.1rem}
+.grip{all:unset;cursor:grab;touch-action:none;font-size:1.2rem;padding:6px 8px;color:var(--muted)}
+.arr{all:unset;cursor:pointer;font-size:.7rem;color:var(--muted);padding:3px 8px}
+.rankit{font-size:.75rem;padding:4px 8px}
+.mlhint{font-size:.82rem;color:var(--muted);margin:6px 0}
+.cmp{border:2px solid var(--accent);border-radius:12px;padding:12px;margin:8px 0;text-align:center}
+.cmpq{font-weight:700;margin-bottom:8px}
+.cmpbtns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+.cmpbtns .pill{max-width:46%;white-space:normal;min-height:44px}
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(120%);background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:.88rem;max-width:min(92vw,420px);box-shadow:0 6px 18px rgba(0,0,0,.3);transition:transform .25s;z-index:60;text-align:center}
+#toast.show{transform:translateX(-50%) translateY(0)}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .pgrid label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
 .pgrid select,.pgrid input[type=range]{width:100%;font:inherit;color:var(--fg)}
@@ -444,11 +485,11 @@ async function fetchData(){
 
 
 const RATINGS = ["G","PG","PG-13","R","NC-17","NR"];
-const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:"all", view:"theater", mc:0, age:99, th:"all", after:0, osc:false, keepsp:true, hidepast:true, soon:["special","wide"], who:"family", showNR:false};
+const S = {mode:"show", focus:null, day:null, ratings:new Set(["G","PG"]), type:"all", view:"theater", mc:0, age:99, th:"all", after:0, osc:false, keepsp:true, hidepast:true, soon:["special","wide"], who:"family", showNR:false, mine:false, listView:"date"};
 const $=id=>document.getElementById(id);
 
 const PREF_KEY="mfs2-"+CITY;
-const KEEP=["view","th","hidepast","keepsp","soon"];
+const KEEP=["view","th","hidepast","keepsp","soon","listView"];
 function load(){ S.ratings=new Set(DATA.defaultRatings); try{ const v=JSON.parse(localStorage.getItem(PREF_KEY)||(CITY==="okc"?localStorage.getItem("mfs2"):null)||"null"); if(v){ for(const k of KEEP) if(v[k]!==undefined) S[k]=v[k]; if(S.th!=="fav") S.th="all"; if(!Array.isArray(S.soon)) S.soon=["special","wide"]; } }catch(e){} }
 /* Only "how I like to browse" settings are kept between visits. Narrowing filters (score, kid age, start time,
    animated/live action) and ratings start fresh each visit so nobody comes back to a quietly shortened list. */
@@ -547,7 +588,8 @@ function render(){
   const soon = S.mode==="soon";
   $("relkinds").hidden = !soon;
   if(!Array.isArray(S.soon)) S.soon=["special","wide"];
-  pills($("relkinds"), [["special","★ Special events"],["wide","Wide release"],["arthouse","Arthouse & awards"],["limited","Other limited"]], v=>S.soon.includes(v), v=>{S.soon=S.soon.includes(v)?S.soon.filter(x=>x!==v):[...S.soon,v];});
+  pills($("relkinds"), [["mine",`★ My list${listCount()?` (${listCount()})`:""}`],["special","★ Special events"],["wide","Wide release"],["arthouse","Arthouse & awards"],["limited","Other limited"]], v=>v==="mine"?S.mine:(!S.mine&&S.soon.includes(v)), v=>{ if(v==="mine"){ S.mine=!S.mine; cmp=null; window.scrollTo({top:0}); return; } if(S.mine){ S.mine=false; if(S.soon.includes(v)) return; } S.soon=S.soon.includes(v)?S.soon.filter(x=>x!==v):[...S.soon,v];});
+  $("relkinds").firstChild && $("relkinds").firstChild.classList.add("minechip");
   pills($("ratings"), RATINGS.map(r=>[r,r]), v=>S.ratings.has(v), v=>{S.ratings.has(v)?S.ratings.delete(v):S.ratings.add(v); S.who="custom"; S.showNR=false;});
   pills($("types"), [["all","All"],["anim","Animated"],["live","Live action"]], v=>v===S.type, v=>{S.type=v;});
   pills($("views"), [["theater","Theater"],["movie","Movie"]], v=>v===S.view, v=>{S.view=v;});
@@ -620,7 +662,8 @@ function relRow(r, tagHtml, dayHtml){
   const d=r.det||{};
   const facts=[d.rating?`Rated ${esc(d.rating)}${d.rating_reason?` for ${esc(d.rating_reason)}`:""}`:"Not yet rated", d.runtime_min?`${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m`:"Runtime not announced", d.genre?esc(d.genre):null, d.method&&/animation/i.test(d.method)?"Animated":null, d.franchise?`${esc(d.franchise)} series`:null].filter(Boolean).join(" · ");
   const thin=!d.synopsis && !(d.stars||[]).length && !(d.directors||[]).length;
-  return `<details class="rel"><summary><span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
+  const lk="r:"+r.src; LISTCAT[lk]={t:r.t, d:r.d, lbl:r.lbl||null, r:d.rating||null, rt:d.runtime_min||null, src:r.src};
+  return `<details class="rel"><summary>${starBtn(lk)}<span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
     ${d.synopsis?`<p>${esc(d.synopsis)}</p>`:""}
     <div class="facts">${facts}</div>
     ${(d.directors||[]).length?`<div><b>Director</b>${nameLinks(d.directors)}</div>`:""}
@@ -631,6 +674,7 @@ function relRow(r, tagHtml, dayHtml){
 }
 // Coming soon: new movies by opening week, plus special events at this family's theaters, in one list.
 function renderSoon(){
+  if(S.mine) return renderMyList();
   const today=todayStr();
   const on=k=>S.soon.includes(k);
   const rateOK=e=>ratingOK({r:e.r,csm:e.csm,g:e.g,sp:e.series,fam:e.fam}, true);
@@ -687,8 +731,9 @@ function renderSoon(){
         const when=days.length===1?dayTxt(days[0]):days.length<=4?days.map(dayShort).join(", "):`${days.length} days, ${dayShort(days[0])} to ${dayShort(days[days.length-1])}`;
         const sched=list.map(x=>{ const rows=x.th.length ? x.th.slice().sort((a,b)=>order(a[0])-order(b[0])).map(([tid,ts])=>{const th=DATA.theaters[tid]; return `<span class="nm">${esc(th?th.short:tid)}${th?` <small>${th.mi} mi</small>`:""}</span><span class="tm">${ts.map(s=>fmt(toMin(s))).join("  ")||"see link"}</span>`;}).join("") : `<span class="na">${esc(x.where||"")}</span>`;
           return `<div class="evday">${dayTxt(x.d)}</div><div class="evwhere">${rows}</div>`; }).join("");
-        const plain=plainTitle(e.t); const noTrailer=/concert|met opera|mystery/i.test(e.series||"") || /double feature/i.test(e.t);
-        html+=`<details class="rel"><summary><span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
+        const plain=plainTitle(e.t); const ek="e:"+normT(e.t); LISTCAT[ek]={t:plain, d:days[0], lbl:null, r:e.r||null, rt:null, src:e.src||null};
+        const noTrailer=/concert|met opera|mystery/i.test(e.series||"") || /double feature/i.test(e.t);
+        html+=`<details class="rel"><summary>${starBtn(ek)}<span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
           ${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
           ${sched}
           <div class="links">${noTrailer?"":`<a class="trl" href="${trailerHref(e, plain, e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a></div>${/concert|met opera|mystery|fan event|special event|drive-in/i.test(e.series||"")?"":homeHtml(e, plain)}</div></details>`;
@@ -699,7 +744,160 @@ function renderSoon(){
   if(curM) html+="</section>";
   if(parts.length) html+=`<p class="calnote">New movies open on the Friday of the week shown unless a day is noted. Opening dates are for the U.S. and come from The Numbers; studios move them often, especially far out. Limited releases open in a few cities first and may reach ${esc(DATA.cityName||"your city")} later or not at all. Special events are at your theaters; chains post most of them 3 to 10 weeks ahead, so later months fill in over time.</p>`;
   $("out").innerHTML=html;
+  refreshSnapshots();
 }
+
+/* ---------- My list: a planning list saved behind a private link (no account) ----------
+   The list lives in the database under a long random id. This device remembers the id; the
+   "Copy my list link" button gives a link that opens the same list on any device. */
+const LIST_KEY="mfs-list-id";
+let L={v:1, items:{}, hype:[], after:[]}, LIST_ID=null, listSaveT=null, listReady=false, cmp=null;
+const LISTCAT={};                       /* what's on screen right now, so a star can save a snapshot */
+const normT=t=>plainTitle(t||"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]/g,"");
+const inList=k=>!!L.items[k];
+const listCount=()=>Object.keys(L.items).length;
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+async function rpc(fn, body){
+  const r=await fetch(SB_URL+"rpc/"+fn,{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!r.ok) throw new Error(fn+" "+r.status); return r.json();
+}
+async function loadList(){
+  const u=new URLSearchParams(location.search), fromLink=u.get("list");
+  if(fromLink && /^[\w-]{20,40}$/.test(fromLink)){ LIST_ID=fromLink; lsSet(LIST_KEY, fromLink);
+    /* Take the id out of the address bar so sharing the page doesn't share the list. */
+    u.delete("list"); history.replaceState(null,"",location.pathname+(u.toString()?"?"+u:"")); }
+  else LIST_ID=lsGet(LIST_KEY);
+  if(LIST_ID){ try{ const d=await rpc("get_list",{p_id:LIST_ID}); if(d && d.items){ L={v:1,items:d.items||{},hype:d.hype||[],after:d.after||[]}; if(fromLink){ S.mine=true; S.mode="soon"; } } else LIST_ID=null; }catch(e){ console.warn("list load",e); } }
+  listReady=true;
+}
+function saveList(){
+  clearTimeout(listSaveT);
+  listSaveT=setTimeout(async()=>{
+    listSaveT=null;
+    try{ const id=await rpc("save_list",{p_id:LIST_ID,p_data:L});
+      if(id && !LIST_ID){ LIST_ID=id; lsSet(LIST_KEY,id); render(); } else if(!id && LIST_ID){ LIST_ID=null; saveList(); }
+    }catch(e){ toast("Couldn't save your list just now. It will try again with your next change."); }
+  },500);
+}
+/* Closing the tab right after a change: send the pending save before the page goes away. */
+window.addEventListener("pagehide",()=>{ if(!listSaveT || !LIST_ID) return; clearTimeout(listSaveT); listSaveT=null;
+  try{ fetch(SB_URL+"rpc/save_list",{method:"POST",keepalive:true,headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_id:LIST_ID,p_data:L})}); }catch(e){} });
+function listLink(){ return location.origin+location.pathname+"?list="+encodeURIComponent(LIST_ID||""); }
+function toast(msg){ let t=$("toast"); if(!t){ t=document.createElement("div"); t.id="toast"; t.setAttribute("role","status"); document.body.appendChild(t); }
+  t.innerHTML=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),3800); }
+function starBtn(k){ const on=inList(k); return `<button class="star${on?" on":""}" data-star="${esc(k)}" aria-pressed="${on}" title="${on?"On My list":"Add to My list"}" aria-label="${on?"Remove from":"Add to"} My list">${on?"★":"☆"}</button>`; }
+function toggleStar(k){
+  if(inList(k)){ delete L.items[k]; L.hype=L.hype.filter(x=>x!==k); L.after=L.after.filter(x=>x!==k); }
+  else { const c=LISTCAT[k]; if(!c) return; const first=!listCount();
+    L.items[k]={...c, seen:false, th:false, added:todayStr()};
+    toast(first?`Added to <b>My list</b>. Tap <b>★ My list</b> above to see it and get your private link.`:`Added to My list`); }
+  saveList(); render();
+}
+/* Keep saved titles, dates and ratings current while the film is still on the release calendar. */
+function refreshSnapshots(){ let ch=false; for(const k in L.items){ const c=LISTCAT[k], it=L.items[k]; if(!c) continue;
+  for(const f of ["t","d","lbl","r","rt"]) if(c[f]!==undefined && c[f]!==it[f]){ it[f]=c[f]; ch=true; } } if(ch) saveList(); }
+function nowPlaying(it){ const n=normT(it.t); let best=null;
+  for(const id in DATA.movies){ const m=DATA.movies[id]; if(normT(m.t)===n){ const th=new Set(DATA.shows.filter(s=>s[2]===id && s[1]>=todayStr()).map(s=>s[0])); if(th.size && (!best||th.size>best.n)) best={id,m,n:th.size}; } }
+  return best; }
+/* Calendar: a standard .ics file (Apple Calendar, Outlook, Google all read it) or Google's own add link. */
+const icsEsc=s=>String(s||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\n/g,"\\n");
+const ymdC=d=>d.replace(/-/g,"");
+const nextDay=d=>{ const x=new Date(d+"T12:00"); x.setDate(x.getDate()+1); return x.getFullYear()+pad(x.getMonth()+1)+pad(x.getDate()); };
+function calDesc(it){ return [it.r?`Rated ${it.r}`:null, it.rt?`${Math.floor(it.rt/60)}h ${pad(it.rt%60)}m`:null].filter(Boolean).join(" · ")+"\nRelease dates can change.\n"+location.origin+location.pathname; }
+function icsFor(items){
+  const now=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+  const ev=items.filter(it=>it.d && !it.lbl).map(it=>["BEGIN:VEVENT",`UID:${normT(it.t)}-${ymdC(it.d)}@richs-showtimes`,`DTSTAMP:${now}`,`DTSTART;VALUE=DATE:${ymdC(it.d)}`,`DTEND;VALUE=DATE:${nextDay(it.d)}`,`SUMMARY:${icsEsc("🎬 "+it.t+" opens")}`,`DESCRIPTION:${icsEsc(calDesc(it))}`,"TRANSP:TRANSPARENT","END:VEVENT"].join("\r\n"));
+  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Rich's One-Stop Showtimes//EN","CALSCALE:GREGORIAN",...ev,"END:VCALENDAR"].join("\r\n");
+}
+const icsHref=items=>"data:text/calendar;charset=utf-8,"+encodeURIComponent(icsFor(items));
+const gcalHref=it=>"https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("🎬 "+it.t+" opens")+"&dates="+ymdC(it.d)+"/"+nextDay(it.d)+"&details="+encodeURIComponent(calDesc(it));
+const fileName=t=>(t||"movie").replace(/[^\w ]+/g,"").trim().replace(/\s+/g,"-").slice(0,40)+".ics";
+
+function renderMyList(){
+  const keys=Object.keys(L.items), items=keys.map(k=>({k,...L.items[k]}));
+  const seenN=items.filter(i=>i.seen).length;
+  $("count").innerHTML=keys.length?`${keys.length} on your list · ${seenN} seen`:"Your list is empty";
+  const view=S.listView||"date";
+  const hypeRank=k=>{ const i=L.hype.indexOf(k); return i<0?null:i+1; }, afterRank=k=>{ const i=L.after.indexOf(k); return i<0?null:i+1; };
+  let html=`<div class="mlhead">`;
+  if(!keys.length) html+=`<div class="mlempty"><b>Nothing here yet.</b> Tap the <span class="star demo">☆</span> next to any movie or special event on Coming soon to add it. Your list sorts itself by release date, and you can rank it by how much you're looking forward to each one.</div>`;
+  else {
+    html+= LIST_ID ? `<div class="mllink"><div><b>Your private list link</b> Bookmark it or text it to yourself to open this list on any device. Anyone with the link can see and change the list.</div><button class="pill" data-copylist>Copy my list link</button></div>`
+                   : `<div class="mllink"><div>Saving your list…</div></div>`;
+    const dated=items.filter(i=>i.d && !i.lbl && !i.seen && i.d>=todayStr());
+    html+=`<div class="mltabs" role="group" aria-label="List view">${[["date","By date"],["hype","Most anticipated"],["after","After seeing"]].map(([v,l])=>`<button class="pill" data-lview="${v}" aria-pressed="${view===v}">${l}</button>`).join("")}</div>`;
+    if(view==="date" && dated.length) html+=`<div class="mlcal"><a class="calbtn" href="${icsHref(dated)}" download="my-movie-list.ics">📅 Add all ${dated.length} upcoming to my calendar</a></div>`;
+  }
+  html+=`</div>`;
+  if(cmp){ const a=L.items[cmp.k], b=L.items[L.after[cmp.mid]];
+    html+=`<div class="cmp"><div class="cmpq">Which did you like more?</div><div class="cmpbtns"><button class="pill" data-cmp="better">${esc(a.t)}</button><button class="pill" data-cmp="worse">${esc(b.t)}</button></div><button class="linkbtn" data-cmp="skip">Rank it later</button></div>`; }
+
+  const row=(it, extra="", compact=false)=>{
+    const np=nowPlaying(it), hr=hypeRank(it.k), ar=afterRank(it.k);
+    const when=it.lbl?esc(it.lbl):it.d?new Date(it.d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}):"Date not set";
+    const facts=[when, it.r?esc(it.r):null, it.rt?`${Math.floor(it.rt/60)}h ${pad(it.rt%60)}m`:null].filter(Boolean).join(" · ");
+    const ranks= it.seen&&ar ? `<span class="rk after">${hr?`Anticipated #${hr} → `:""}Seen #${ar}</span>` : hr?`<span class="rk">#${hr} anticipated</span>`:"";
+    const cal=it.d && !it.lbl && it.d>=todayStr() && !it.seen ? `<a href="${icsHref([it])}" download="${fileName(it.t)}">📅 Calendar</a><a href="${gcalHref(it)}" target="_blank" rel="noopener">Google Calendar</a>`:"";
+    return `<div class="mlrow" data-k="${esc(it.k)}">${extra}<div class="mlmain"><div class="mltitle">${esc(it.t)}</div><div class="facts">${facts}</div>${ranks?`<div class="rks">${ranks}</div>`:""}
+      ${compact?"":np?`<a class="np" href="${movieHref(np.id)}" data-focus="${np.id}">▶ Now playing at ${np.n} of your theater${np.n>1?"s":""}</a>${np.m.tm?homeShort(np.m):""}`:""}
+      ${compact?"":`<div class="mlctl"><label><input type="checkbox" data-seen="${esc(it.k)}"${it.seen?" checked":""}> Seen it</label>${it.seen?`<label><input type="checkbox" data-inth="${esc(it.k)}"${it.th?" checked":""}> In the theater</label>`:""}${cal}<button class="linkbtn rm" data-rm="${esc(it.k)}">Remove</button></div>`}</div></div>`; };
+
+  if(view==="date"){
+    const sorted=items.slice().sort((a,b)=>(a.d||"9999")+(a.lbl?"z":"")>(b.d||"9999")+(b.lbl?"z":"")?1:-1);
+    let cur="";
+    for(const it of sorted){ const m=it.lbl?(it.d?it.d.slice(0,4)+" (date not set)":"Date not set"):new Date(it.d+"T12:00").toLocaleDateString("en-US",{month:"long",year:"numeric"});
+      if(m!==cur){ html+=`<div class="dayhd mlmonth">${esc(m)}</div>`; cur=m; } html+=row(it); }
+  } else {
+    const order=view==="hype"?L.hype:L.after, pool=view==="hype"?items:items.filter(i=>i.seen);
+    const ranked=order.filter(k=>L.items[k] && (view==="hype"||L.items[k].seen)).map(k=>({k,...L.items[k]}));
+    const rest=pool.filter(i=>!order.includes(i.k)).sort((a,b)=>(a.d||"9").localeCompare(b.d||"9"));
+    html+=`<p class="mlhint">${view==="hype"?"Drag ☰ (or use the arrows) to put these in order of how much you're looking forward to them.":"Your ranking of the movies you've seen. Checking “Seen it” asks a quick question or two to slot a movie in; drag to adjust."}</p>`;
+    html+=`<div class="rankl" data-order="${view}">`+ranked.map((it,i)=>row(it,`<div class="rkctl"><span class="rknum">${i+1}</span><button class="grip" data-grip aria-label="Drag to reorder">☰</button><button class="arr" data-mv="-1" aria-label="Move up">▲</button><button class="arr" data-mv="1" aria-label="Move down">▼</button></div>`, true)).join("")+`</div>`;
+    if(rest.length) html+=`<div class="subhd">Not ranked yet</div>`+rest.map(it=>row(it,`<div class="rkctl"><button class="pill rankit" data-rankit="${esc(it.k)}">Rank</button></div>`, true)).join("");
+    if(!pool.length) html+=`<div class="mlempty">${view==="after"?"Check “Seen it” on a movie and it will show up here.":"Add movies with the ☆ on Coming soon."}</div>`;
+  }
+  $("out").innerHTML=html;
+}
+/* Ranking after seeing: a few "which did you like more?" taps place a newly seen movie (binary search). */
+function startCompare(k){ L.after=L.after.filter(x=>x!==k&&L.items[x]&&L.items[x].seen); if(!L.after.length){ L.after=[k]; cmp=null; saveList(); return; }
+  cmp={k, lo:0, hi:L.after.length, mid:Math.floor(L.after.length/2)}; }
+function answerCompare(a){ if(!cmp) return; if(a==="skip"){ cmp=null; render(); return; }
+  if(a==="better") cmp.hi=cmp.mid; else cmp.lo=cmp.mid+1;
+  if(cmp.lo>=cmp.hi){ L.after.splice(cmp.lo,0,cmp.k); cmp=null; saveList(); } else cmp.mid=Math.floor((cmp.lo+cmp.hi)/2);
+  render(); }
+function moveRank(list, k, d){ const i=list.indexOf(k), j=i+d; if(i<0||j<0||j>=list.length) return; [list[i],list[j]]=[list[j],list[i]]; saveList(); render(); }
+/* Drag to reorder: press the ☰ handle and slide; works with mouse and touch. */
+function startDrag(e, handle){
+  const rowEl=handle.closest(".mlrow"), box=rowEl.parentElement, which=box.dataset.order; e.preventDefault();
+  rowEl.classList.add("dragging");  /* listen on the window: moving the row in the page would drop a captured pointer */
+  const move=ev=>{ const sibs=[...box.children].filter(x=>x!==rowEl); let before=null;
+    for(const s of sibs){ const r=s.getBoundingClientRect(); if(ev.clientY < r.top+r.height/2){ before=s; break; } }
+    box.insertBefore(rowEl, before);
+    if(ev.clientY<70) window.scrollBy(0,-12); else if(ev.clientY>innerHeight-70) window.scrollBy(0,12); };
+  const up=()=>{ window.removeEventListener("pointermove",move); window.removeEventListener("pointerup",up); window.removeEventListener("pointercancel",up);
+    rowEl.classList.remove("dragging"); const keys=[...box.children].map(x=>x.dataset.k);
+    if(which==="hype") L.hype=keys; else L.after=keys; saveList(); render(); };
+  window.addEventListener("pointermove",move); window.addEventListener("pointerup",up); window.addEventListener("pointercancel",up);
+}
+$("out").addEventListener("pointerdown",e=>{ const h=e.target.closest("[data-grip]"); if(h) startDrag(e,h); });
+$("out").addEventListener("click",e=>{
+  const t=e.target;
+  const st=t.closest("[data-star]"); if(st){ e.preventDefault(); e.stopPropagation(); toggleStar(st.dataset.star); return; }
+  const lv=t.closest("[data-lview]"); if(lv){ S.listView=lv.dataset.lview; save(); render(); return; }
+  if(t.closest("[data-copylist]")){ const link=listLink(); (navigator.clipboard?navigator.clipboard.writeText(link):Promise.reject()).then(()=>toast("Link copied. Paste it into a text or bookmark it."),()=>toast(`Your link (press and hold to copy):<br><b>${esc(link)}</b>`)); return; }
+  const rm=t.closest("[data-rm]"); if(rm){ toggleStar(rm.dataset.rm); return; }
+  const c=t.closest("[data-cmp]"); if(c){ answerCompare(c.dataset.cmp); return; }
+  const ri=t.closest("[data-rankit]"); if(ri){ const k=ri.dataset.rankit; if((S.listView||"date")==="hype"){ L.hype=L.hype.filter(x=>x!==k).concat(k); saveList(); render(); } else { startCompare(k); render(); } return; }
+  const mv=t.closest("[data-mv]"); if(mv){ const k=mv.closest(".mlrow").dataset.k; moveRank(S.listView==="after"?L.after:L.hype, k, +mv.dataset.mv); return; }
+});
+$("out").addEventListener("change",e=>{
+  const sn=e.target.closest("[data-seen]"); if(sn){ const k=sn.dataset.seen, it=L.items[k]; it.seen=sn.checked;
+    if(it.seen){ startCompare(k); if(!cmp) toast(`Marked seen. Rank it under <b>After seeing</b>.`); else S.listView="after"; }
+    else { it.th=false; L.after=L.after.filter(x=>x!==k); }
+    saveList(); render(); return; }
+  const th=e.target.closest("[data-inth]"); if(th){ L.items[th.dataset.inth].th=th.checked; saveList(); }
+});
 
 // No trailer database needed: a YouTube search for the title lands on the official trailer.
 // Fallback when we don't have a film's own trailer page: a YouTube search worded to put the official trailer first.
@@ -765,7 +963,7 @@ const TOUR=[
   {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, a minimum Metacritic score, Common Sense ages, theaters and start time. Filters start fresh each visit; how you group the list and which theaters you show are remembered on this device."},
   {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie, today and on the days ahead."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
-  {sel:"#relkinds", sel2:"#tab-soon", mode:"soon", title:"Coming soon: choose what to see", text:"You're now on the <b>Coming soon</b> tab, which looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
+  {sel:"#relkinds", sel2:"#tab-soon", mode:"soon", title:"Coming soon: choose what to see", text:"You're now on the <b>Coming soon</b> tab, which looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap the <b>☆</b> next to any movie to add it to <b>★ My list</b>, your own release calendar that you can rank and add to your phone's calendar. Tap a chip to turn a group on or off. <b>★ Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
   {sel:"#tourbtn", title:"Want this for your city?", text:"Request your own page, set up with your favorite theaters and ratings. Fill out a short form and Richard will make it happen!<br><br>Tap ? any time to see this tour again.", cta:true}
 ];
 let tourEls=null, tourI=0;
@@ -891,7 +1089,7 @@ async function boot(){
   /* A phone can keep the tab open for days: reload when it is opened on a later date. */
   const loadedOn=todayStr();
   document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && todayStr()!==loadedOn) location.reload(); });
-  try{ DATA=await fetchData(); }
+  try{ DATA=await fetchData(); await loadList(); }
   catch(err){ const setup=/No theaters/.test(err.message); $("out").innerHTML=`<div class="empty">${setup?`This city isn't set up yet. <button class="done" id="reqbtn3">Request your city</button>`:"Couldn't load showtimes ("+esc(err.message)+"). Check your connection and reload."}</div>`; if(setup){ $("madefor").textContent=""; $("reqbtn3").onclick=openReq; } return; }
   $("madefor").textContent = DATA.madeFor ? " for "+DATA.madeFor : "";
   FAV_ORDER = Object.entries(DATA.theaters).sort((a,b)=>((a[1].rank??99)-(b[1].rank??99))||(a[1].mi-b[1].mi)).map(e=>e[0]);
