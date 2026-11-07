@@ -147,6 +147,8 @@ button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-col
 .cmpbtns .pill{max-width:46%;white-space:normal;min-height:44px}
 #toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(120%);background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:10px;font-size:.88rem;max-width:min(92vw,420px);box-shadow:0 6px 18px rgba(0,0,0,.3);transition:transform .25s;z-index:60;text-align:center}
 #toast.show{transform:translateX(-50%) translateY(0)}
+.mlquick{all:unset;cursor:pointer;font-size:.8rem;font-weight:700;color:#a07800;white-space:nowrap;padding:6px 4px}
+.toastbtn{all:unset;cursor:pointer;display:block;margin:8px auto 0;padding:6px 14px;border-radius:999px;background:var(--bg);color:var(--fg);font-weight:700;font-size:.85rem}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
 .pgrid label{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
 .pgrid select,.pgrid input[type=range]{width:100%;font:inherit;color:var(--fg)}
@@ -605,6 +607,9 @@ function render(){
   $("viewbox").hidden = S.mode!=="show";
   $("mcv").textContent=S.mc?S.mc+"+":"any";
   $("fsum").textContent=filterSummary();
+  /* A way back to My list from Showtimes and Specials once there's something on it. */
+  { let ml=$("mlquick"); if(!ml){ ml=document.createElement("button"); ml.id="mlquick"; ml.className="mlquick"; ml.dataset.openlist=""; $("fsum").after(ml); }
+    const n=listCount(); ml.hidden=!n || S.mode==="soon"; ml.textContent=`★ My list (${n})`; }
   requestAnimationFrame(()=>document.documentElement.style.setProperty("--barh", document.querySelector(".bar").offsetHeight+"px"));
   $("clearbtn").hidden=!filtersActive();
   save();
@@ -795,14 +800,17 @@ window.addEventListener("pagehide",()=>{ if(!listSaveT || !LIST_ID) return; clea
   try{ fetch(SB_URL+"rpc/save_list",{method:"POST",keepalive:true,headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json"},body:JSON.stringify({p_id:LIST_ID,p_data:L})}); }catch(e){} });
 function listLink(){ return location.origin+location.pathname+"?list="+encodeURIComponent(LIST_ID||""); }
 function toast(msg){ let t=$("toast"); if(!t){ t=document.createElement("div"); t.id="toast"; t.setAttribute("role","status"); document.body.appendChild(t); }
-  t.innerHTML=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),3800); }
+  t.innerHTML=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),5000); }
+/* "Open My list" from anywhere: jump to Coming soon with My list showing. */
+function openMyList(){ S.mode="soon"; S.focus=null; S.mine=true; cmp=null; const t=$("toast"); if(t) t.classList.remove("show"); render(); window.scrollTo({top:0}); }
+document.addEventListener("click",e=>{ if(e.target.closest("[data-openlist]")){ e.preventDefault(); openMyList(); } });
 function starBtn(k, t){ const on=inList(k, t); return `<button class="star${on?" on":""}" data-star="${esc(k)}" aria-pressed="${on}" title="${on?"On My list":"Add to My list"}" aria-label="${on?"Remove from":"Add to"} My list">${on?"★":"☆"}</button>`; }
 function toggleStar(k){
   if(!L.items[k]){ const c=LISTCAT[k], other=c&&keyByTitle(c.t); if(other) k=other; }
   if(L.items[k]){ delete L.items[k]; L.hype=L.hype.filter(x=>x!==k); L.after=L.after.filter(x=>x!==k); }
   else { const c=LISTCAT[k]; if(!c) return; const first=!listCount();
     L.items[k]={...c, seen:false, th:false, added:todayStr()};
-    toast(first?`Added to <b>My list</b>. Tap <b>★ My list</b> above to see it and get your private link.`:`Added to My list`); }
+    toast(`Added to My list${first?". It also gives you a private link to open it on any device.":""}<button class="toastbtn" data-openlist>Open My list</button>`); }
   saveList(); render();
 }
 /* Keep saved titles, dates and ratings current while the film is still on the release calendar. */
