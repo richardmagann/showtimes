@@ -70,6 +70,9 @@ header.top .who{grid-column:1/-1;margin-top:8px;order:9}
 .fam13.inask{justify-content:center;text-align:left;margin:2px 0 0}
 .fam13.inask small{display:block}
 .who button small{display:block;font-size:.7rem;font-weight:600;opacity:.75;margin-top:1px}
+.fam13.flash{animation:flash 1.6s}
+@keyframes flash{0%,40%{background:var(--accent-soft);box-shadow:0 0 0 6px var(--accent-soft)}100%{background:transparent;box-shadow:none}}
+#fam13p{border-radius:8px}
 .byline{font-size:.88rem;color:var(--fg)}
 .byline b{font-weight:700}
 h1{font-family:var(--display);font-weight:800;font-size:clamp(1.2rem,5.6vw,1.7rem);text-wrap:balance;line-height:1;letter-spacing:.02em;text-transform:uppercase;margin:0}
@@ -634,7 +637,7 @@ function render(){
   $("days").hidden = S.mode!=="show" || !!S.focus;
   pills($("days"), DAYS.filter(d=>d>=todayStr()||d===DAYS[DAYS.length-1]).map(d=>{const l=dayLabel(d);return [d,`<b>${l.w}</b><small>${l.md}</small>`];}), v=>v===S.day, v=>{S.day=v;S.focus=null;}, "day");
   for(const b of document.querySelectorAll("#who button")){ b.setAttribute("aria-pressed", b.dataset.who===S.who);
-    const sub=b.dataset.who==="family" ? famRatings().join(" · ") : "All ratings"; let sm=b.querySelector("small"); if(!sm){ sm=document.createElement("small"); b.appendChild(sm); } sm.textContent=sub; }
+    const sub=b.dataset.who==="family" ? famRatings().join(" · ")+(DATA.defaultRatings.includes("PG-13")?"":" ✎") : "All ratings"; let sm=b.querySelector("small"); if(!sm){ sm=document.createElement("small"); b.appendChild(sm); } sm.textContent=sub; }
   { const f=$("fam13p"); if(f){ f.hidden=DATA.defaultRatings.includes("PG-13"); $("fam13c").checked=fam13(); } }
   const soon = S.mode==="soon";
   $("relkinds").hidden = !soon;
@@ -1133,7 +1136,7 @@ function filmBlock(mid, groups){
 /* ---------- First-visit tour ---------- */
 const TOUR=[
   {center:true, next:"Take the tour", title:"Rich's One-Stop Showtimes", text:"<i class='tagline'>Going to the movies really shouldn't be this hard.</i>Every movie at your favorite theaters on one page, filtered to the ratings you want (e.g., PG only), with critics' scores, age guides, trailers, and the time you'll walk out.<br><br>Richard built this because he was sick of checking five different sites to answer three questions: Is it any good? Is it right for kids of different ages? Is it playing at a good theater?<br><br>Built for families, but adaptable to everyone.<span class='madeby'>Created by Richard Magann</span>"},
-  {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows the ratings listed under the button, plus unrated movies that look family-friendly. If your kids watch PG-13, check <b>Count PG-13 as Family</b> under Filters › Rating; this phone remembers it. <b>Grown-ups</b> shows everything. Switch any time."},
+  {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows the ratings listed under the button, plus unrated movies that look family-friendly. If your kids watch PG-13, tap the ratings under Family (the ✎) and check <b>Count PG-13 as Family</b>; this phone remembers it. <b>Grown-ups</b> shows everything. Switch any time."},
   {sel:"#srchbtn", title:"Search", text:"Looking for a particular movie? Tap the magnifying glass and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away, and you can tap ☆ to add it to My list."},
   {sel:".tabs", title:"Four tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>Specials</b>: this week's can't-miss one-off and classic screenings. Think Back to the Future on the big screen again!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead.<br><b>★ My list</b>: movies you've starred (☆), by date, with rankings and calendar reminders."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
@@ -1150,7 +1153,7 @@ const WHATSNEW=[
   {sel:"#srchbtn", title:"Search", text:"Tap the magnifying glass and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away. Tap ☆ to save it."},
   {sel:"#tab-list", title:"★ My list", text:"Tap the ☆ next to any movie on any tab to save it here. Your list sorts by release date, lets you rank what you're most looking forward to and what you liked most, and can add opening days to your phone's calendar."},
   {sel:".filterline", title:"Genres", text:"<b>Filters</b> now has genres, like Comedy or Sci-Fi &amp; Fantasy. Combine them with Animated to get, say, animated sci-fi. Movies also show their genres next to the runtime."},
-  {sel:"#who", title:"PG-13 in Family", text:"The Family button now shows which ratings it includes. If your kids watch PG-13, check <b>Count PG-13 as Family</b> under Filters › Rating. This phone remembers it.<br><br>Tap ? any time for the full tour."}
+  {sel:"#who", title:"PG-13 in Family", text:"The Family button now shows which ratings it includes. If your kids watch PG-13, tap the ratings under Family (the ✎) and check <b>Count PG-13 as Family</b>. This phone remembers it.<br><br>Tap ? any time for the full tour."}
 ];
 let tourEls=null, tourI=0;
 function tourKey(){ return "mfs-tour-v6"; }
@@ -1300,7 +1303,9 @@ for(const id of ["osc","keepsp","hidepast"]) $(id).checked=S[id];
 bind("mc","mc",Number); bind("age","age",Number); bind("th","th",String); bind("after","after",Number);
 bind("osc","osc"); bind("keepsp","keepsp"); bind("hidepast","hidepast");
 if(DATA.updated){ const u=new Date(DATA.updated); $("fresh").textContent=`Updated ${u.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}, ${u.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} · through ${dayLabel(DAYS[DAYS.length-1]).w} ${dayLabel(DAYS[DAYS.length-1]).md}`; }
-$("who").addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); render();});
+$("who").addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); render();
+  /* Tapping the ratings under Family opens Filters at the PG-13 checkbox. */
+  if(e.target.closest("small") && b.dataset.who==="family" && !$("fam13p").hidden){ setPanel(true); const f=$("fam13p"); f.classList.remove("flash"); void f.offsetWidth; f.classList.add("flash"); f.scrollIntoView({block:"center",behavior:"smooth"}); }});
 $("fam13c").onchange=e=>{ setFam13(e.target.checked); if(S.who!=="grown") setWho("family"); render(); };
 $("clearbtn").onclick=clearFilters; $("clearbtn2").onclick=clearFilters;
 $("out").addEventListener("click",e=>{ if(e.target.closest("[data-clear]")) clearFilters(); });
