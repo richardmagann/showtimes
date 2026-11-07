@@ -109,6 +109,15 @@ button.pill[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-col
 .mltabs{display:flex;gap:6px;flex-wrap:wrap}
 .mltabs .pill{font-size:.84rem}
 .mlcal a,.calbtn{font-weight:600;color:var(--accent);text-decoration:none}
+.mladd{border:1px solid var(--line);border-radius:10px;padding:0 12px;background:var(--surface)}
+.mladd summary{cursor:pointer;font-weight:700;color:var(--accent);padding:10px 0;list-style:none}
+.mladd summary::-webkit-details-marker{display:none}
+.mladd form{display:flex;flex-direction:column;gap:8px;padding-bottom:10px}
+.mladd label{display:flex;flex-direction:column;gap:3px;font-size:.8rem;font-weight:600}
+.mladd input,.mladd select{font:inherit;font-size:16px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-width:0}
+.mladdw{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:8px}
+.mladd .pill{align-self:flex-start}
+.ftitle h3 .star{font-size:1.05rem;vertical-align:1px;margin-right:2px}
 .mlempty{padding:14px;border:1px dashed var(--line);border-radius:10px;font-size:.9rem;line-height:1.45}
 .mlmonth{margin-top:14px}
 .mlrow{display:flex;gap:10px;padding:10px 2px;border-bottom:1px solid var(--line);background:var(--bg)}
@@ -662,7 +671,7 @@ function relRow(r, tagHtml, dayHtml){
   const facts=[d.rating?`Rated ${esc(d.rating)}${d.rating_reason?` for ${esc(d.rating_reason)}`:""}`:"Not yet rated", d.runtime_min?`${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m`:"Runtime not announced", d.genre?esc(d.genre):null, d.method&&/animation/i.test(d.method)?"Animated":null, d.franchise?`${esc(d.franchise)} series`:null].filter(Boolean).join(" · ");
   const thin=!d.synopsis && !(d.stars||[]).length && !(d.directors||[]).length;
   const lk="r:"+r.src; LISTCAT[lk]={t:r.t, d:r.d, lbl:r.lbl||null, r:d.rating||null, rt:d.runtime_min||null, src:r.src};
-  return `<details class="rel"><summary>${starBtn(lk)}<span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
+  return `<details class="rel"><summary>${starBtn(lk, r.t)}<span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
     ${d.synopsis?`<p>${esc(d.synopsis)}</p>`:""}
     <div class="facts">${facts}</div>
     ${(d.directors||[]).length?`<div><b>Director</b>${nameLinks(d.directors)}</div>`:""}
@@ -732,7 +741,7 @@ function renderSoon(){
           return `<div class="evday">${dayTxt(x.d)}</div><div class="evwhere">${rows}</div>`; }).join("");
         const plain=plainTitle(e.t); const ek="e:"+normT(e.t); LISTCAT[ek]={t:plain, d:days[0], lbl:null, r:e.r||null, rt:null, src:e.src||null};
         const noTrailer=/concert|met opera|mystery/i.test(e.series||"") || /double feature/i.test(e.t);
-        html+=`<details class="rel"><summary>${starBtn(ek)}<span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
+        html+=`<details class="rel"><summary>${starBtn(ek, plain)}<span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
           ${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
           ${sched}
           <div class="links">${noTrailer?"":`<a class="trl" href="${trailerHref(e, plain, e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a></div>${/concert|met opera|mystery|fan event|special event|drive-in/i.test(e.series||"")?"":homeHtml(e, plain)}</div></details>`;
@@ -753,7 +762,8 @@ const LIST_KEY="mfs-list-id";
 let L={v:1, items:{}, hype:[], after:[]}, LIST_ID=null, listSaveT=null, listReady=false, cmp=null;
 const LISTCAT={};                       /* what's on screen right now, so a star can save a snapshot */
 const normT=t=>plainTitle(t||"").toLowerCase().replace(/&/g,"and").replace(/[^a-z0-9]/g,"");
-const inList=k=>!!L.items[k];
+const keyByTitle=t=>{ const n=normT(t); return Object.keys(L.items).find(k=>normT(L.items[k].t)===n)||null; };
+const inList=(k,t)=>!!L.items[k] || (t!=null && !!keyByTitle(t));
 const listCount=()=>Object.keys(L.items).length;
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -785,9 +795,10 @@ window.addEventListener("pagehide",()=>{ if(!listSaveT || !LIST_ID) return; clea
 function listLink(){ return location.origin+location.pathname+"?list="+encodeURIComponent(LIST_ID||""); }
 function toast(msg){ let t=$("toast"); if(!t){ t=document.createElement("div"); t.id="toast"; t.setAttribute("role","status"); document.body.appendChild(t); }
   t.innerHTML=msg; t.classList.add("show"); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove("show"),3800); }
-function starBtn(k){ const on=inList(k); return `<button class="star${on?" on":""}" data-star="${esc(k)}" aria-pressed="${on}" title="${on?"On My list":"Add to My list"}" aria-label="${on?"Remove from":"Add to"} My list">${on?"★":"☆"}</button>`; }
+function starBtn(k, t){ const on=inList(k, t); return `<button class="star${on?" on":""}" data-star="${esc(k)}" aria-pressed="${on}" title="${on?"On My list":"Add to My list"}" aria-label="${on?"Remove from":"Add to"} My list">${on?"★":"☆"}</button>`; }
 function toggleStar(k){
-  if(inList(k)){ delete L.items[k]; L.hype=L.hype.filter(x=>x!==k); L.after=L.after.filter(x=>x!==k); }
+  if(!L.items[k]){ const c=LISTCAT[k], other=c&&keyByTitle(c.t); if(other) k=other; }
+  if(L.items[k]){ delete L.items[k]; L.hype=L.hype.filter(x=>x!==k); L.after=L.after.filter(x=>x!==k); }
   else { const c=LISTCAT[k]; if(!c) return; const first=!listCount();
     L.items[k]={...c, seen:false, th:false, added:todayStr()};
     toast(first?`Added to <b>My list</b>. Tap <b>★ My list</b> above to see it and get your private link.`:`Added to My list`); }
@@ -813,6 +824,26 @@ const icsHref=items=>"data:text/calendar;charset=utf-8,"+encodeURIComponent(icsF
 const gcalHref=it=>"https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("🎬 "+it.t+" opens")+"&dates="+ymdC(it.d)+"/"+nextDay(it.d)+"&details="+encodeURIComponent(calDesc(it));
 const fileName=t=>(t||"movie").replace(/[^\w ]+/g,"").trim().replace(/\s+/g,"-").slice(0,40)+".ics";
 
+const MONTHS_L=["January","February","March","April","May","June","July","August","September","October","November","December"];
+function addForm(){ const y0=new Date().getFullYear();
+  return `<details class="mladd"><summary>+ Add a movie that's not listed</summary><form id="mladdf" autocomplete="off">
+    <label>Title<input name="t" maxlength="120" required placeholder="e.g. Avengers: Secret Wars"></label>
+    <div class="mladdw"><label>Year<select name="y">${[0,1,2,3,4].map(i=>`<option>${y0+i}</option>`).join("")}</select></label>
+    <label>Month<select name="m"><option value="">Not announced</option>${MONTHS_L.map((n,i)=>`<option value="${i+1}">${n}</option>`).join("")}</select></label>
+    <label>Day<input name="d" inputmode="numeric" maxlength="2" placeholder="optional"></label></div>
+    <button class="pill" type="submit">Add to My list</button><p class="mlhint">With an exact date you also get the calendar buttons. To change a date later, remove it and add it again.</p></form></details>`; }
+function addCustom(f){
+  const t=f.t.value.trim().replace(/\s+/g," "); if(!t) return; const y=+f.y.value, m=+f.m.value||0, dd=+f.d.value||0;
+  let d, lbl=null;
+  if(m && dd>=1 && dd<=31){ const x=new Date(y,m-1,dd); if(x.getMonth()!==m-1){ toast("That day isn't in that month."); return; } d=`${y}-${pad(m)}-${pad(dd)}`; }
+  else if(m){ d=`${y}-${pad(m)}-28`; lbl=`${MONTHS_L[m-1]} ${y}`; }
+  else { d=`${y}-12-31`; lbl=`${y}`; }
+  if(keyByTitle(t)){ toast(`<b>${esc(t)}</b> is already on your list.`); return; }
+  const k="c:"+normT(t)+"-"+Date.now().toString(36);
+  L.items[k]={t, d, lbl, r:null, rt:null, src:null, custom:true, seen:false, th:false, added:todayStr()};
+  saveList(); toast(`Added <b>${esc(t)}</b>`); render();
+}
+document.addEventListener("submit",e=>{ if(e.target.id==="mladdf"){ e.preventDefault(); addCustom(e.target); } });
 function renderMyList(){
   const keys=Object.keys(L.items), items=keys.map(k=>({k,...L.items[k]}));
   const seenN=items.filter(i=>i.seen).length;
@@ -820,13 +851,14 @@ function renderMyList(){
   const view=S.listView||"date";
   const hypeRank=k=>{ const i=L.hype.indexOf(k); return i<0?null:i+1; }, afterRank=k=>{ const i=L.after.indexOf(k); return i<0?null:i+1; };
   let html=`<div class="mlhead">`;
-  if(!keys.length) html+=`<div class="mlempty"><b>Nothing here yet.</b> Tap the <span class="star demo">☆</span> next to any movie or special event on Coming soon to add it. Your list sorts itself by release date, and you can rank it by how much you're looking forward to each one.</div>`;
+  if(!keys.length) html+=addForm()+`<div class="mlempty"><b>Nothing here yet.</b> Tap the <span class="star demo">☆</span> next to any movie or special event on Coming soon to add it. Your list sorts itself by release date, and you can rank it by how much you're looking forward to each one.</div>`;
   else {
     html+= LIST_ID ? `<div class="mllink"><div><b>Your private list link</b> Bookmark it or text it to yourself to open this list on any device. Anyone with the link can see and change the list.</div><button class="pill" data-copylist>Copy my list link</button></div>`
                    : `<div class="mllink"><div>Saving your list…</div></div>`;
-    const dated=items.filter(i=>i.d && !i.lbl && !i.seen && i.d>=todayStr());
+    const dated=items.filter(i=>i.d && !i.lbl && !i.now && !i.seen && i.d>=todayStr());
     html+=`<div class="mltabs" role="group" aria-label="List view">${[["date","By date"],["hype","Most anticipated"],["after","After seeing"]].map(([v,l])=>`<button class="pill" data-lview="${v}" aria-pressed="${view===v}">${l}</button>`).join("")}</div>`;
-    if(view==="date" && dated.length) html+=`<div class="mlcal"><a class="calbtn" href="${icsHref(dated)}" download="my-movie-list.ics">📅 Add all ${dated.length} upcoming to my calendar</a></div>`;
+    html+=addForm();
+    if(view==="date" && dated.length) html+=`<div class="mlcal"><a class="calbtn" href="${icsHref(dated)}" download="my-movie-list.ics">📅 ${dated.length>1?`Add all ${dated.length} upcoming movies`:"Add the upcoming movie"} to my calendar</a></div>`;
   }
   html+=`</div>`;
   if(cmp){ const a=L.items[cmp.k], b=L.items[L.after[cmp.mid]];
@@ -834,18 +866,18 @@ function renderMyList(){
 
   const row=(it, extra="", compact=false)=>{
     const np=nowPlaying(it), hr=hypeRank(it.k), ar=afterRank(it.k);
-    const when=it.lbl?esc(it.lbl):it.d?new Date(it.d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}):"Date not set";
+    const when=it.now?"In theaters now":it.lbl?esc(it.lbl)+(it.custom&&/[a-z]/i.test(it.lbl)?" (day not set)":""):it.d?new Date(it.d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:"numeric"}):"Date not set";
     const facts=[when, it.r?esc(it.r):null, it.rt?`${Math.floor(it.rt/60)}h ${pad(it.rt%60)}m`:null].filter(Boolean).join(" · ");
     const ranks= it.seen&&ar ? `<span class="rk after">${hr?`Anticipated #${hr} → `:""}Seen #${ar}</span>` : hr?`<span class="rk">#${hr} anticipated</span>`:"";
-    const cal=it.d && !it.lbl && it.d>=todayStr() && !it.seen ? `<a href="${icsHref([it])}" download="${fileName(it.t)}">📅 Calendar</a><a href="${gcalHref(it)}" target="_blank" rel="noopener">Google Calendar</a>`:"";
+    const cal=it.d && !it.lbl && !it.now && it.d>=todayStr() && !it.seen ? `<a href="${icsHref([it])}" download="${fileName(it.t)}">📅 Calendar</a><a href="${gcalHref(it)}" target="_blank" rel="noopener">Google Calendar</a>`:"";
     return `<div class="mlrow" data-k="${esc(it.k)}">${extra}<div class="mlmain"><div class="mltitle">${esc(it.t)}</div><div class="facts">${facts}</div>${ranks?`<div class="rks">${ranks}</div>`:""}
       ${compact?"":np?`<a class="np" href="${movieHref(np.id)}" data-focus="${np.id}">▶ Now playing at ${np.n} of your theater${np.n>1?"s":""}</a>${np.m.tm?homeShort(np.m):""}`:""}
       ${compact?"":`<div class="mlctl"><label><input type="checkbox" data-seen="${esc(it.k)}"${it.seen?" checked":""}> Seen it</label>${it.seen?`<label><input type="checkbox" data-inth="${esc(it.k)}"${it.th?" checked":""}> In the theater</label>`:""}${cal}<button class="linkbtn rm" data-rm="${esc(it.k)}">Remove</button></div>`}</div></div>`; };
 
   if(view==="date"){
-    const sorted=items.slice().sort((a,b)=>(a.d||"9999")+(a.lbl?"z":"")>(b.d||"9999")+(b.lbl?"z":"")?1:-1);
+    const sorted=items.slice().sort((a,b)=>((a.d||"9999")+(a.lbl?"z":"")).localeCompare((b.d||"9999")+(b.lbl?"z":""))||a.t.localeCompare(b.t));
     let cur="";
-    for(const it of sorted){ const m=it.lbl?(it.d?it.d.slice(0,4)+" (date not set)":"Date not set"):new Date(it.d+"T12:00").toLocaleDateString("en-US",{month:"long",year:"numeric"});
+    for(const it of sorted){ const m=!it.d?"Date not set":(it.lbl && !/[a-z]/i.test(it.lbl))?it.d.slice(0,4)+" (date not set)":new Date(it.d+"T12:00").toLocaleDateString("en-US",{month:"long",year:"numeric"});
       if(m!==cur){ html+=`<div class="dayhd mlmonth">${esc(m)}</div>`; cur=m; } html+=row(it); }
   } else {
     const order=view==="hype"?L.hype:L.after, pool=view==="hype"?items:items.filter(i=>i.seen);
@@ -949,7 +981,7 @@ function filmBlock(mid, groups){
      ${links}</div></details>`
      : links;
   const spBanner = m.sp ? `<div class="spflag">★ Special showing<span>${esc(m.sp)}</span></div>` : "";
-  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3><a class="ttl" href="${movieHref(mid)}" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</a>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3>${(()=>{ const pt=plainTitle(m.t), mk="m:"+normT(m.t); if(!LISTCAT[mk]){ const ds=DATA.shows.filter(x=>x[2]===mid).map(x=>x[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||todayStr(), lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true}; } return starBtn(mk, pt); })()}<a class="ttl" href="${movieHref(mid)}" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</a>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
