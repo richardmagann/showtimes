@@ -146,6 +146,8 @@ section.group{margin-top:22px}
 .ttl:hover{color:var(--accent);text-decoration-color:var(--accent)}
 .ttl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .facts{font-size:.85rem;color:var(--muted);margin-top:2px;font-variant-numeric:tabular-nums}
+.facts .rtm{color:var(--fg);font-weight:600}
+.rel summary .rtm2{font-size:.82rem;color:var(--fg);opacity:.8;font-variant-numeric:tabular-nums}
 .badges{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
 .badge{font-size:.8rem;font-weight:700;color:var(--amber)}
 .scores{display:flex;gap:6px;flex:none}
@@ -158,7 +160,7 @@ section.group{margin-top:22px}
 .where{flex-basis:100%;font-size:.85rem;font-weight:700;color:var(--fg);margin-top:2px}
 .where small{font-weight:400;color:var(--muted)}
 .t{font-family:var(--mono);font-size:.9rem;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-variant-numeric:tabular-nums;color:var(--fg)}
-.t i{font-style:normal;font-family:var(--body);color:var(--muted);font-size:.75rem;margin-left:4px}
+.t i{font-style:normal;font-family:var(--body);color:var(--fg);opacity:.75;font-size:.78rem;margin-left:4px}
 .t em{font-style:normal;font-family:var(--body);font-size:.7rem;font-weight:700;color:var(--accent);margin-left:5px;text-transform:uppercase}
 .t.past{opacity:.38;text-decoration:line-through}
 details.cred summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600}
@@ -350,7 +352,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="foot">
   <div class="copyright"><strong>Rich's One-Stop Showtimes</strong> was created by Richard Magann. © 2026 Richard Magann. All rights reserved.</div>
   <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Trailers: YouTube. Where to watch at home and trailer links: <a href="https://www.themoviedb.org">TMDB</a>, with streaming data from <a href="https://www.justwatch.com">JustWatch</a>. This product uses the TMDB API but is not endorsed or certified by TMDB. Upcoming release dates: <a href="https://www.the-numbers.com/movies/release-schedule">The Numbers</a>. The Calendar also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
-  <div><strong>Times.</strong> End times are the start plus the movie's runtime plus about 20 minutes of trailers, rounded to 5 minutes. Theaters vary, so treat them as estimates.</div>
+  <div><strong>Times.</strong> "Out ~" times are when you should walk out: the start plus the movie's runtime plus about 20 minutes of trailers, rounded to 5 minutes. Theaters vary, so treat them as estimates.</div>
   <div><strong>Distances</strong> are straight-line miles from home, rounded to the nearest mile, not driving miles.</div>
   <div><strong>Oscar notes</strong> and a few classic re-release ratings were added by hand and may be incomplete. Always check the rating with the theater before you buy.</div>
   <div><strong>Your filters</strong> are saved on this device only.</div>
@@ -615,9 +617,9 @@ const nameLinks=list=>(list||[]).map(n=>`<a href="${wikiName(n)}" target="_blank
 // One upcoming film: a one-line row that opens to show what we know about it.
 function relRow(r, tagHtml, dayHtml){
   const d=r.det||{};
-  const facts=[d.rating?`Rated ${esc(d.rating)}${d.rating_reason?` for ${esc(d.rating_reason)}`:""}`:"Not yet rated", d.runtime_min?`${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m`:null, d.genre?esc(d.genre):null, d.method&&/animation/i.test(d.method)?"Animated":null, d.franchise?`${esc(d.franchise)} series`:null].filter(Boolean).join(" · ");
+  const facts=[d.rating?`Rated ${esc(d.rating)}${d.rating_reason?` for ${esc(d.rating_reason)}`:""}`:"Not yet rated", d.runtime_min?`${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m`:"Runtime not announced", d.genre?esc(d.genre):null, d.method&&/animation/i.test(d.method)?"Animated":null, d.franchise?`${esc(d.franchise)} series`:null].filter(Boolean).join(" · ");
   const thin=!d.synopsis && !(d.stars||[]).length && !(d.directors||[]).length;
-  return `<details class="rel"><summary><span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
+  return `<details class="rel"><summary><span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
     ${d.synopsis?`<p>${esc(d.synopsis)}</p>`:""}
     <div class="facts">${facts}</div>
     ${(d.directors||[]).length?`<div><b>Director</b>${nameLinks(d.directors)}</div>`:""}
@@ -727,12 +729,12 @@ function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
 function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
 function filmBlock(mid, groups){
   const m=DATA.movies[mid];
-  const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m`:"runtime TBA", m.anim===true?"Animated":m.anim===false?"Live action":null].filter(Boolean).join(" · ");
+  const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`<b class="rtm">${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m</b>`:"Runtime not announced", m.anim===true?"Animated":m.anim===false?"Live action":null].filter(Boolean).join(" · ");
   const badges=m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"";
   const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Metacritic</small></span>`;
   const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
-    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>ends ~${fmt(Math.round((s+m.rt+20)/5)*5)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${esc(r.fmt)}</em>`:""}</span>`;}).join("");
+    const chips=rs.sort((a,b)=>toMin(a.t)-toMin(b.t)).map(r=>{const s=toMin(r.t); const end=m.rt? `<i>out ~${fmt(Math.round((s+m.rt+20)/5)*5)}</i>`:""; return `<span class="t${r.past?" past":""}">${fmt(s)}${end}${r.fmt?`<em>${esc(r.fmt)}</em>`:""}</span>`;}).join("");
     return `<div class="tline">${tid?`<span class="where">${esc(DATA.theaters[tid].short)} <small>${DATA.theaters[tid].mi} mi</small></span>`:""}${chips}</div>`;
   }).join("");
   const hasCred=m.dir.length||m.wr.length||m.st.length;
