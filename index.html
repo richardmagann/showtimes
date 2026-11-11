@@ -530,7 +530,7 @@ async function fetchData(){
     sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[]),
     sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[]),
     sb(`fandango_info?select=url,synopsis,trailer_url`, true).catch(()=>[]),
-    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres&tmdb_id=not.is.null`, true).catch(()=>[]),
+    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres,oscars&tmdb_id=not.is.null`, true).catch(()=>[]),
     sb(`awards?select=body,category,film,film_year,person,result,top&season=eq.${AW_SEASON}&order=body,category`, true).catch(()=>[]),
     sb(`awards_dates?select=body,event,on_date&season=eq.${AW_SEASON}&order=on_date`).catch(()=>[])
   ]);
@@ -616,7 +616,7 @@ function setWho(w){
   try{ sessionStorage.setItem("mfs-who-"+CITY, w); }catch(e){}
 }
 function movieOK(m, specialsMode){
-  if(S.osc && !m.osc && !awOf(m.t,m.y)) return false;
+  if(S.osc && !m.osc && !awOf(m.t,m.y) && !oscHist(m)) return false;
   if(S.type==="anim" && m.anim!==true) return false;
   if(S.type==="live" && m.anim!==false) return false;
   if(!genreOK(m,"m")) return false;
@@ -778,6 +778,13 @@ function awList(x){ return `<ul class="awl">${awBodies(x).map(b=>b.wins.concat(x
   `<li><span class="awr ${a.result}">${a.result==="winner"?"Won":a.result==="nominee"?"Nominated":a.result==="runner-up"?"Runner-up":"Shortlisted"}</span> <b>${esc(a.body)}</b> ${esc(a.category)}${a.person?` <span class="awp">${esc(a.person)}</span>`:""}</li>`).join("")).join("")}</ul>`; }
 function awDetails(x){ return `<details class="awd"><summary>🏆 ${esc(awSummary(x,2))}</summary>${awList(x)}</details>`; }
 
+/* Past Oscars for older films (classics, anniversaries, re-releases), from Wikidata via the TMDB lookup.
+   A hand-written note on the movie (m.osc) wins when there is one. */
+function oscHist(x){ const o=x&&x.tm&&x.tm.oscars; return o&&o.nom>0 ? o : null; }
+function oscHistTxt(o){ const bp=o.list.some(l=>l.won&&l.c==="Best Picture");
+  return o.won ? (bp ? `won Best Picture${o.won>1?` + ${o.won-1} more`:""} · ${plural(o.nom,"nomination")}` : `won ${o.won} of ${plural(o.nom,"nomination")}`) : o.nom===1 ? `nominated for ${o.list[0].c}` : plural(o.nom,"nomination"); }
+function oscHistDetails(o){ return `<details class="awd"><summary>🏆 Oscars: ${esc(oscHistTxt(o))}</summary><ul class="awl">${o.list.map(l=>`<li><span class="awr ${l.won?"winner":"nominee"}">${l.won?"Won":"Nominated"}</span> ${esc(l.c)}${l.who&&l.who.length?` <span class="awp">${esc(l.who.join(", "))}</span>`:""}</li>`).join("")}</ul><div class="awp" style="font-size:.76rem">Oscar history from Wikidata; a Best Song nomination may be missing.</div></details>`; }
+
 /* The awards page: what's announced next, and every contender grouped by where you can see it. */
 let awView="all";
 function openAwards(){ if(!DATA) return; let o=$("awp");
@@ -917,13 +924,13 @@ function runSearch(){
   if(movs.length){ html+=`<div class="srhd">Playing now</div>`;
     for(const {id,m,p} of movs){ const pt=plainTitle(m.t), mk="m:"+normT(pt); n++; shown.add(keyT(m.t));
       const ds=DATA.shows.filter(s=>s[2]===id && s[1]>=today).map(s=>s[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||today, lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true};
-      const meta=[m.r?`<span class="rate">${esc(m.r)}</span>`:"", fmtRt(m.rt), m.anim===true?"Animated":"", gLabel(m,"m",2), awOf(m.t,m.y)?"🏆 "+esc(awSummary(awOf(m.t,m.y),1)):""].filter(Boolean).join(" · ");
+      const meta=[m.r?`<span class="rate">${esc(m.r)}</span>`:"", fmtRt(m.rt), m.anim===true?"Animated":"", gLabel(m,"m",2), awOf(m.t,m.y)?"🏆 "+esc(awSummary(awOf(m.t,m.y),1)):m.osc?"🏆 Oscars: "+esc(m.osc):oscHist(m)?"🏆 Oscars: "+esc(oscHistTxt(oscHist(m))):""].filter(Boolean).join(" · ");
       html+=`<div class="srow">${starBtn(mk, pt)}<div class="srbody"><a class="srt" href="${movieHref(id)}" data-sfocus="${esc(id)}">${esc(m.t)}</a><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${showLink(id)}</div></div></div>`; }
     html+=more(movAll.length,20); }
   if(evRows.length){ html+=`<div class="srhd">Special events</div>`;
     for(const {list,p,mid} of evRows){ const e=list[0], plain=plainTitle(e.t), ek="e:"+normT(e.t), days=[...new Set(list.map(x=>x.d))].sort(); n++; shown.add(keyT(e.t));
       LISTCAT[ek]={t:plain, d:days[0], lbl:null, r:e.r||null, rt:null, src:e.src||null};
-      const meta=[e.r?`<span class="rate">${esc(e.r)}</span>`:"", esc(e.series||""), gLabel(e,"e",2), awOf(e.t,e.y)?"🏆 "+esc(awSummary(awOf(e.t,e.y),1)):""].filter(Boolean).join(" · ");
+      const meta=[e.r?`<span class="rate">${esc(e.r)}</span>`:"", esc(e.series||""), gLabel(e,"e",2), awOf(e.t,e.y)?"🏆 "+esc(awSummary(awOf(e.t,e.y),1)):oscHist(e)?"🏆 Oscars: "+esc(oscHistTxt(oscHist(e))):""].filter(Boolean).join(" · ");
       html+=`<div class="srow">${starBtn(ek, plain)}<div class="srbody"><span class="srt">${esc(e.t)}${e.y&&e.y<THIS_YEAR?` <span class="yr">(${esc(e.y)})</span>`:""}</span><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${dayTxt(days[0])}${days.length>1?` + ${days.length-1} more date${days.length>2?"s":""}`:""}</div><div class="smeta">${mid&&cnt[mid]?showLink(mid):e.src?`<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src)?"Tickets on Fandango":"Event page"} ›</a>`:""}</div></div></div>`; }
     html+=more(evAllRows.length,20); }
   /* Coming releases (a re-release already shown as a special event is not repeated) */
@@ -960,7 +967,7 @@ function renderSoon(){
   const on=k=>S.soon.includes(k);
   const rateOK=e=>ratingOK({r:e.r,csm:e.csm,g:e.g,sp:e.series,fam:e.fam}, true);
   const evAll=on("special")?(DATA.calendar||[]).filter(e=>e.d>=today):[];
-  const evs=evAll.filter(e=>rateOK(e) && genreOK(e,"e") && evTypeOK(e) && (!S.osc || awOf(e.t,e.y))); let evHidden=evAll.length-evs.length;
+  const evs=evAll.filter(e=>rateOK(e) && genreOK(e,"e") && evTypeOK(e) && (!S.osc || awOf(e.t,e.y) || oscHist(e))); let evHidden=evAll.length-evs.length;
   const nrHid=(S.who==="family" && !S.showNR) ? evAll.filter(e=>(!e.r||e.r==="NR") && !rateOK(e)).length : 0;
   // Coming films follow the same Family / Grown-ups choice once they have a rating; unrated ones always show.
   const relOK=r=>{ const d=r.det; if(d && d.rating && !S.ratings.has(d.rating)) return false;
@@ -1019,8 +1026,8 @@ function renderSoon(){
           return `<div class="evday">${dayTxt(x.d)}</div><div class="evwhere">${rows}</div>`; }).join("");
         const plain=plainTitle(e.t); const ek="e:"+normT(e.t); LISTCAT[ek]={t:plain, d:days[0], lbl:null, r:e.r||null, rt:null, src:e.src||null};
         const noTrailer=/concert|met opera|mystery/i.test(e.series||"") || /double feature/i.test(e.t);
-        html+=`<details class="rel"><summary>${starBtn(ek, plain)}<span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}${gLabel(e,"e",2)?`<span class="gn">${gLabel(e,"e",2)}</span>`:""}${awOf(e.t,e.y)?`<span class="awg" title="Awards contender">🏆</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
-          ${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
+        html+=`<details class="rel"><summary>${starBtn(ek, plain)}<span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}${gLabel(e,"e",2)?`<span class="gn">${gLabel(e,"e",2)}</span>`:""}${awOf(e.t,e.y)||oscHist(e)?`<span class="awg" title="${oscHist(e)?"Oscars: "+esc(oscHistTxt(oscHist(e))):"Awards contender"}">🏆</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
+          ${oscHist(e)?oscHistDetails(oscHist(e)):""}${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
           ${sched}
           <div class="links">${noTrailer?"":`<a class="trl" href="${trailerHref(e, plain, e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a></div>${/concert|met opera|mystery|fan event|special event|drive-in/i.test(e.series||"")?"":homeHtml(e, plain)}</div></details>`;
       }
@@ -1244,7 +1251,7 @@ function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_b
 function filmBlock(mid, groups){
   const m=DATA.movies[mid];
   const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`<b class="rtm">${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m</b>`:"Runtime not announced", m.anim===true?"Animated":(m.anim===false && !gLabel(m,"m"))?"Live action":null, gLabel(m,"m")||null].filter(Boolean).map(x=>`<span class="nb">${x}</span>`).join(" · ");
-  const badges=(m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"")+(awOf(m.t,m.y)?awDetails(awOf(m.t,m.y)):"");
+  const badges=(m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:oscHist(m)?oscHistDetails(oscHist(m)):"")+(awOf(m.t,m.y)?awDetails(awOf(m.t,m.y)):"");
   const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Metacritic</small></span>`;
   const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
