@@ -272,7 +272,10 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .rel[open] summary::after{content:"\2212"}
 .rel .yr{color:var(--muted)}
 .rel summary .gn,.smeta .gn{font-size:.8rem;color:var(--muted)}
-#srchbtn{display:inline-flex;align-items:center;justify-content:center;padding:0}
+.qrow{display:flex;gap:8px}
+.qsearch{flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:10px;padding:0 12px;min-height:38px;font:inherit;font-size:.92rem;cursor:pointer}
+.qsearch span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qaw{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--amber);border-radius:10px;padding:0 12px;min-height:38px;font:inherit;font-size:.92rem;font-weight:700;cursor:pointer;white-space:nowrap}
 #srch{position:fixed;inset:0;z-index:58;background:var(--bg);display:flex;flex-direction:column}
 #srch[hidden]{display:none}
 html.srch-open,html.srch-open body{overflow:hidden}
@@ -414,13 +417,14 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="wrap">
 <header class="top">
   <h1>Rich's <span>One&#8209;Stop Showtimes</span></h1>
-  <div class="hdr-actions"><button class="ibtn" id="awbtn" aria-label="Awards season" title="Awards season">🏆</button><button class="ibtn" id="srchbtn" aria-label="Search movies" title="Search movies"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button><button class="ibtn" id="tourbtn" aria-label="How this works" title="How this works">?</button></div>
+  <div class="hdr-actions"><button class="ibtn" id="tourbtn" aria-label="How this works" title="How this works">?</button></div>
   <div class="who" id="who" role="group" aria-label="Who's watching"><button data-who="family" aria-pressed="true">Family</button><button data-who="grown" aria-pressed="false">Grown-ups</button></div>
   <span class="byline" id="byline">Created by <b>Richard Magann</b><span id="madefor"> for Ryan Winkler</span></span>
   <span class="fresh" id="fresh"></span>
 </header>
 
 <div class="bar">
+  <div class="qrow"><button class="qsearch" id="srchbtn" aria-label="Search movies, directors and stars"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg><span>Search movies &amp; people</span></button><button class="qaw" id="awbtn">🏆 Awards</button></div>
   <div class="tabs" role="tablist" aria-label="View">
     <button role="tab" data-mode="show" id="tab-show">Showtimes</button>
     <button role="tab" data-mode="spec" id="tab-spec">Specials</button>
@@ -1270,8 +1274,8 @@ function filmBlock(mid, groups){
 const TOUR=[
   {center:true, next:"Take the tour", title:"Rich's One-Stop Showtimes", text:"<i class='tagline'>Going to the movies really shouldn't be this hard.</i>Every movie at your favorite theaters on one page, filtered to the ratings you want (e.g., PG only), with critics' scores, age guides, trailers, and the time you'll walk out.<br><br>Richard built this because he was sick of checking five different sites to answer three questions: Is it any good? Is it right for kids of different ages? Is it playing at a good theater?<br><br>Built for families, but adaptable to everyone.<span class='madeby'>Created by Richard Magann</span>"},
   {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows the ratings listed under the button, plus unrated movies that look family-friendly. If your kids watch PG-13, tap the ratings under Family (the ✎) and check <b>Count PG-13 as Family</b>; this phone remembers it. <b>Grown-ups</b> shows everything. Switch any time."},
-  {sel:"#awbtn", title:"Awards season", text:"Tap the trophy to follow this year's awards race, from the fall festivals and critics' prizes through the Golden Globes, guild awards, BAFTA and the Oscars. See when each one is announced, and every nominated movie sorted by where you can watch it: in theaters near you, opening soon, or at home. Nominated movies also show a 🏆 line on their listing; tap it for the details."},
-  {sel:"#srchbtn", title:"Search", text:"Looking for a particular movie? Tap the magnifying glass and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away, and you can tap ☆ to add it to My list."},
+  {sel:"#awbtn", title:"Awards season", text:"Tap 🏆 Awards to follow this year's awards race, from the fall festivals and critics' prizes through the Golden Globes, guild awards, BAFTA and the Oscars. See when each one is announced, and every nominated movie sorted by where you can watch it: in theaters near you, opening soon, or at home. Nominated movies also show a 🏆 line on their listing; tap it for the details."},
+  {sel:"#srchbtn", title:"Search", text:"Looking for a particular movie? Tap the search box and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away, and you can tap ☆ to add it to My list."},
   {sel:".tabs", title:"Four tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>Specials</b>: this week's can't-miss one-off and classic screenings. Think Back to the Future on the big screen again!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead.<br><b>★ My list</b>: movies you've starred (☆), by date, with rankings and calendar reminders."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
   {sel:".filterline", title:"Filters", text:"Choose which ratings to show (e.g., PG), animated or live action, genres, a minimum Metacritic score, Common Sense ages, theaters and start time. Filters start fresh each visit; how you group the list and which theaters you show are remembered on this device."},
@@ -1283,10 +1287,10 @@ const TOUR=[
 /* Shown once to people who already took the tour, so they find what was added since. */
 const NEW_KEY="mfs-new-nov26", NEW2_KEY="mfs-new-awards27";
 /* Shown once to anyone who already saw the full tour or the first What's new. */
-const WHATSNEW2=[{sel:"#awbtn", title:"New: Awards season", text:"Tap the trophy to follow this year's awards race, from the fall festivals and critics' prizes through the Golden Globes, guild awards, BAFTA and the Oscars. See when each one is announced, and every nominated movie sorted by where you can watch it: in theaters near you, opening soon, or at home. Nominated movies also show a 🏆 line on their listing; tap it for the details."}];
+const WHATSNEW2=[{sel:"#awbtn", title:"New: Awards season", text:"Tap 🏆 Awards to follow this year's awards race, from the fall festivals and critics' prizes through the Golden Globes, guild awards, BAFTA and the Oscars. See when each one is announced, and every nominated movie sorted by where you can watch it: in theaters near you, opening soon, or at home. Nominated movies also show a 🏆 line on their listing; tap it for the details."}];
 const WHATSNEW=[
   {center:true, next:"Show me", title:"What's new", text:"A few things were added since you took the tour: search, a My list tab, genre filters, and PG-13 as part of Family. Four quick stops."},
-  {sel:"#srchbtn", title:"Search", text:"Tap the magnifying glass and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away. Tap ☆ to save it."},
+  {sel:"#srchbtn", title:"Search", text:"Tap the search box and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away. Tap ☆ to save it."},
   {sel:"#tab-list", title:"★ My list", text:"Tap the ☆ next to any movie on any tab to save it here. Your list sorts by release date, lets you rank what you're most looking forward to and what you liked most, and can add opening days to your phone's calendar."},
   {sel:".filterline", title:"Genres", text:"<b>Filters</b> now has genres, like Comedy or Sci-Fi &amp; Fantasy. Combine them with Animated to get, say, animated sci-fi. Movies also show their genres next to the runtime."},
   {sel:"#who", title:"PG-13 in Family", text:"The Family button now shows which ratings it includes. If your kids watch PG-13, tap the ratings under Family (the ✎) and check <b>Count PG-13 as Family</b>. This phone remembers it.<br><br>Tap ? any time for the full tour."}
