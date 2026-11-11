@@ -530,7 +530,7 @@ async function fetchData(){
     sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[]),
     sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[]),
     sb(`fandango_info?select=url,synopsis,trailer_url`, true).catch(()=>[]),
-    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres,oscars&tmdb_id=not.is.null`, true).catch(()=>[]),
+    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres,oscars,us_dates&tmdb_id=not.is.null`, true).catch(()=>[]),
     sb(`awards?select=body,category,film,film_year,person,result,top&season=eq.${AW_SEASON}&order=body,category`, true).catch(()=>[]),
     sb(`awards_dates?select=body,event,on_date&season=eq.${AW_SEASON}&order=on_date`).catch(()=>[])
   ]);
@@ -1247,6 +1247,17 @@ const imdbLink=(t,y)=>"https://www.imdb.com/find/?s=tt&q="+encodeURIComponent(t+
 /* A real link for each movie, so Cmd/Ctrl-click or a long-press opens it in a new tab. */
 const movieHref=id=>{ const u=new URLSearchParams(location.search); u.set("movie",id); return "?"+u.toString(); };
 const plainTitle=t=>t.replace(/\s*[-–:]?\s*\(?\d+(st|nd|rd|th)\s+anniversary.*$/i,"").replace(/(\s*\([^)]*\))+\s*$/,"").replace(/\s*[-–:]\s*(encore|re-?release|fan event|early access).*$/i,"").trim();
+/* U.S. release dates from TMDB: limited and wide theatrical, and when it came out to rent or stream. */
+function relDatesTxt(x){ const u=x&&x.tm&&x.tm.us_dates; if(!u) return "";
+  const f=d=>new Date(d+"T12:00").toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+  /* An older film's later re-release dates are ignored; show when it first came out. */
+  const old=[u.limited,u.wide].filter(d=>d && Number(d.slice(0,4))<THIS_YEAR-1).sort()[0];
+  if(old) return `Originally ${f(old)}`;
+  const parts=[];
+  if(u.limited && u.wide && u.limited!==u.wide){ parts.push(`Limited ${f(u.limited)}`, `Wide ${f(u.wide)}`); }
+  else if(u.wide||u.limited) parts.push(`${u.wide?"":"Limited "}${f(u.wide||u.limited)}`);
+  if(u.digital) parts.push(`At home ${f(u.digital)}`);
+  return parts.join(" · "); }
 function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
 function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
 function filmBlock(mid, groups){
@@ -1265,8 +1276,9 @@ function filmBlock(mid, groups){
   const home = showHome ? homeHtml(m, plainTitle(m.t), !older) : "";
   const homeLine = showHome ? homeShort(m) : "";
   const links=`${home}<div class="links">${m.wiki?`<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(m.wiki.replace(/ /g,"_"))}" target="_blank" rel="noopener">Wikipedia</a>`:""}<a href="${url(m.fd)}" target="_blank" rel="noopener">Tickets on Fandango</a></div>`;
-  const credits = (hasCred||m.syn) ? `<details class="cred"><summary>${m.syn?"What it's about, cast and crew":"Director, writers, cast"}</summary><div class="credits">
+  const credits = (hasCred||m.syn||relDatesTxt(m)) ? `<details class="cred"><summary>${m.syn?"What it's about, cast and crew":"Director, writers, cast"}</summary><div class="credits">
      ${m.syn?`<p class="syn">${esc(m.syn)}</p>`:""}
+     ${relDatesTxt(m)?`<div><b>U.S. release</b>${esc(relDatesTxt(m))}</div>`:""}
      ${m.dir.length?`<div><b>Director</b>${people(m.dir)}</div>`:""}
      ${m.wr.length?`<div><b>Writers</b>${people(m.wr)}</div>`:""}
      ${m.st.length?`<div><b>Starring</b>${people(m.st)}</div>`:""}
