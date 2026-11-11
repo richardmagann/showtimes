@@ -289,6 +289,27 @@ a.srt:hover{text-decoration:underline}
 .smeta{font-size:.84rem;color:var(--muted);margin-top:2px}
 .srchadd{margin:18px 0 0}
 .srmore{font-size:.82rem;color:var(--muted);margin:6px 0 0}
+#awp{position:fixed;inset:0;z-index:58;background:var(--bg);display:flex;flex-direction:column}
+#awp[hidden]{display:none}
+.awh{flex:1;margin:0;font-size:1.15rem}
+.awd{margin:6px 0 2px;font-size:.86rem}
+.awd>summary{cursor:pointer;color:var(--amber);font-weight:600;list-style:none;display:inline}
+.awd>summary::-webkit-details-marker{display:none}
+.awd[open]>summary{margin-bottom:4px}
+.awl{margin:2px 0 4px;padding-left:0;list-style:none;font-size:.84rem;line-height:1.45}
+.awl li{margin:2px 0}
+.awr{font-size:.72rem;font-weight:700;border-radius:4px;padding:0 5px;background:var(--line);color:var(--fg)}
+.awr.winner{background:#d4a017;color:#fff}
+.awp{color:var(--muted)}
+.awg{font-size:.85rem;margin-left:4px}
+.awdates{list-style:none;padding:0;margin:4px 0;font-size:.9rem}
+.awdates li{padding:3px 0;display:flex;gap:8px}.awdates li span{flex:none;width:112px;font-weight:600}
+.awdates li.done{color:var(--muted);text-decoration:line-through}
+.awmore>summary{cursor:pointer;color:var(--accent);font-size:.88rem;margin:4px 0}
+.awcal{display:inline-block;margin:8px 0 4px;text-decoration:none}
+.awtabs{display:flex;gap:8px;margin:18px 0 4px;flex-wrap:wrap}
+.awtabs .pill[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.awsrc{font-size:.8rem}
 .panel h4 small{text-transform:none;letter-spacing:0;font-weight:400;margin-left:4px}
 .rel .evsum{flex-basis:100%;color:var(--muted);font-size:.84rem}
 .relbody .evwhere{margin-top:2px}
@@ -390,7 +411,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="wrap">
 <header class="top">
   <h1>Rich's <span>One&#8209;Stop Showtimes</span></h1>
-  <div class="hdr-actions"><button class="ibtn" id="srchbtn" aria-label="Search movies" title="Search movies"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button><button class="ibtn" id="tourbtn" aria-label="How this works" title="How this works">?</button></div>
+  <div class="hdr-actions"><button class="ibtn" id="awbtn" aria-label="Awards season" title="Awards season">🏆</button><button class="ibtn" id="srchbtn" aria-label="Search movies" title="Search movies"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg></button><button class="ibtn" id="tourbtn" aria-label="How this works" title="How this works">?</button></div>
   <div class="who" id="who" role="group" aria-label="Who's watching"><button data-who="family" aria-pressed="true">Family</button><button data-who="grown" aria-pressed="false">Grown-ups</button></div>
   <span class="byline" id="byline">Created by <b>Richard Magann</b><span id="madefor"> for the Fife family</span></span>
   <span class="fresh" id="fresh"></span>
@@ -423,7 +444,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
         <select id="th"><option value="all">All theaters on this page</option><option value="fav">Only my numbered favorites</option></select></label>
       <label for="after">Starts at or after
         <select id="after"><option value="0">Any time</option><option value="12">Noon</option><option value="16">4 PM</option><option value="18">6 PM</option><option value="20">8 PM</option></select></label>
-      <label class="check" for="osc"><input type="checkbox" id="osc"> Oscar-nominated only</label>
+      <label class="check" for="osc"><input type="checkbox" id="osc"> 🏆 Award nominees and winners only</label>
       <label class="check" for="keepsp"><input type="checkbox" id="keepsp" checked> <span>Always show unrated special events <small>Things with no rating, like opera broadcasts, concerts and old classics. Only matters when you pick ratings yourself.</small></span></label>
       <label class="check" for="hidepast"><input type="checkbox" id="hidepast" checked> Hide showtimes that have started</label>
     </div>
@@ -494,14 +515,16 @@ async function fetchData(){
   const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name,default_ratings,made_for`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
   if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
   const ids=ct.map(r=>r.theaters.id);
-  const [shows, events, log, rels, dets, finfo, tmdb] = await Promise.all([
+  const [shows, events, log, rels, dets, finfo, tmdb, awr, awdt] = await Promise.all([
     sb(`showtimes?select=theater_id,movie_id,show_date,start_time,format&theater_id=in.(${ids.join(",")})&show_date=gte.${ymd}&order=show_date,start_time`, true),
     sb(`events?select=*&event_date=gte.${ymd}&or=(city_id.eq.${CITY},city_id.is.null)&order=event_date,title`, true),
     sb(`refresh_log?select=finished_at&city_id=eq.${CITY}&status=eq.ok&order=finished_at.desc&limit=1`),
     sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[]),
     sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[]),
     sb(`fandango_info?select=url,synopsis,trailer_url`, true).catch(()=>[]),
-    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres&tmdb_id=not.is.null`, true).catch(()=>[])
+    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres&tmdb_id=not.is.null`, true).catch(()=>[]),
+    sb(`awards?select=body,category,film,film_year,person,result,top&season=gte.${new Date().getFullYear()}&order=body,category`, true).catch(()=>[]),
+    sb(`awards_dates?select=body,event,on_date&season=gte.${new Date().getFullYear()}&order=on_date`).catch(()=>[])
   ]);
   const mids=[...new Set(shows.map(s=>s.movie_id))];
   const movies=[];
@@ -524,6 +547,7 @@ async function fetchData(){
   const tm=new Map(tmdb.map(x=>[x.ref,x]));
   for(const id in D.movies) D.movies[id].tm=tm.get("m:"+id)||null;
   for(const e of D.calendar) e.tm=tm.get("e:"+e.t)||null;
+  D.awards=awr; D.awDates=awdt; D.awTm={}; for(const a of awr) if(!D.awTm[a.film] && tm.get("a:"+a.film)) D.awTm[a.film]=tm.get("a:"+a.film);
   D.releases=rels.filter(r=>!DROP.test(r.title||"")).map(r=>({tm:tm.get("r:"+r.source_url)||null,det:detBy.get(r.source_url)||null,d:r.release_date,lbl:r.date_label,t:r.title,scope:r.scope,k:r.kind,dist:r.distributor,src:r.source_url}));
   return D;
 }
@@ -584,7 +608,7 @@ function setWho(w){
   try{ sessionStorage.setItem("mfs-who-"+CITY, w); }catch(e){}
 }
 function movieOK(m, specialsMode){
-  if(S.osc && !m.osc) return false;
+  if(S.osc && !m.osc && !awOf(m.t)) return false;
   if(S.type==="anim" && m.anim!==true) return false;
   if(S.type==="live" && m.anim!==false) return false;
   if(!genreOK(m,"m")) return false;
@@ -627,7 +651,7 @@ function filterSummary(){
   if(S.age<99) parts.push("OK for age "+S.age);
   if(S.th!=="all") parts.push("Favorites only");
   if(S.after) parts.push("After "+fmt(S.after*60));
-  if(S.osc) parts.push("Oscar only");
+  if(S.osc) parts.push("Awards only");
   return parts.join(" · ");
 }
 
@@ -715,6 +739,96 @@ function renderShows(){
 
 const wikiName=n=>"https://en.wikipedia.org/wiki/Special:Search?go=Go&search="+encodeURIComponent(n);
 const nameLinks=list=>(list||[]).map(n=>`<a href="${wikiName(n)}" target="_blank" rel="noopener">${esc(n)}</a>`).join(", ");
+/* ---------- Awards season ----------
+   Nominations and wins for the current season (festivals, critics, guilds, Globes, BAFTA, Oscars), from the awards
+   table. Matched to our listings by title. */
+const AW_ORDER=["Oscars","Golden Globes","BAFTA","Critics Choice","Actor Awards (SAG)","DGA","PGA","WGA","Independent Spirit","Gotham","National Board of Review","New York Film Critics Circle","Cannes","Venice","Toronto"];
+const awKey=t=>normT(plainTitle(t||""));
+let AWIDX=null;
+let AWIDX_D=null;
+function awIndex(){ if(AWIDX && AWIDX_D===DATA) return AWIDX; AWIDX=new Map(); AWIDX_D=DATA;
+  for(const a of (DATA.awards||[])){ const k=awKey(a.film); if(!AWIDX.has(k)) AWIDX.set(k,{film:a.film, year:a.film_year, rows:[]}); AWIDX.get(k).rows.push(a); }
+  return AWIDX; }
+function awOf(t){ return t ? awIndex().get(awKey(t))||null : null; }
+function awBodies(x){ const by=new Map();
+  for(const a of x.rows){ if(!by.has(a.body)) by.set(a.body,{body:a.body, wins:[], noms:0, ru:0, sl:0, top:false}); const b=by.get(a.body);
+    if(a.result==="winner") b.wins.push(a); else if(a.result==="nominee") b.noms++; else if(a.result==="runner-up") b.ru++; else b.sl++; if(a.top) b.top=true; }
+  const rank=b=>{ const i=AW_ORDER.indexOf(b.body); return i<0?99:i; };
+  return [...by.values()].sort((a,b)=>(b.wins.length?1:0)-(a.wins.length?1:0)||rank(a)-rank(b)); }
+const plural=(n,w)=>`${n} ${w}${n===1?"":"s"}`;
+function awBodyTxt(b){ const parts=[];
+  if(b.wins.length) parts.push(b.wins.length===1 ? `won ${b.wins[0].category}` : plural(b.wins.length,"win"));
+  if(b.noms) parts.push(plural(b.noms, "nomination"));
+  if(b.ru) parts.push(b.ru===1?"runner-up":plural(b.ru,"runner-up"));
+  if(b.sl) parts.push("shortlisted");
+  return `${b.body}: ${parts.join(", ")}`; }
+function awSummary(x, max){ const bs=awBodies(x); return bs.slice(0,max||2).map(awBodyTxt).join(" · ")+(bs.length>(max||2)?` · +${bs.length-(max||2)} more`:""); }
+function awScore(x){ let s=0; for(const a of x.rows){ const w=AW_ORDER.indexOf(a.body); const big=w>=0&&w<8?2:1; s+=(a.result==="winner"?3:a.result==="nominee"?1:0.5)*big*(a.top?2:1); } return s; }
+function awList(x){ return `<ul class="awl">${awBodies(x).map(b=>b.wins.concat(x.rows.filter(a=>a.body===b.body && a.result!=="winner")).map(a=>
+  `<li><span class="awr ${a.result}">${a.result==="winner"?"Won":a.result==="nominee"?"Nominated":a.result==="runner-up"?"Runner-up":"Shortlisted"}</span> <b>${esc(a.body)}</b> ${esc(a.category)}${a.person?` <span class="awp">${esc(a.person)}</span>`:""}</li>`).join("")).join("")}</ul>`; }
+function awDetails(x){ return `<details class="awd"><summary>🏆 ${esc(awSummary(x,2))}</summary>${awList(x)}</details>`; }
+
+/* The awards page: what's announced next, and every contender grouped by where you can see it. */
+let awView="all";
+function openAwards(){ if(!DATA) return; let o=$("awp");
+  if(!o){ o=document.createElement("div"); o.id="awp"; o.className="ovl"; o.setAttribute("role","dialog"); o.setAttribute("aria-modal","true"); o.setAttribute("aria-label","Awards season");
+    o.innerHTML=`<div class="srchbar"><h2 class="awh">🏆 Awards season</h2><button class="pill" id="awdone">Done</button></div><div class="srchres" id="awres"></div>`;
+    document.body.appendChild(o);
+    $("awdone").onclick=closeAwards;
+    o.addEventListener("click",e=>{ const t=e.target;
+      const st=t.closest("[data-star]"); if(st){ e.preventDefault(); e.stopPropagation(); toggleStar(st.dataset.star); renderAwards(); return; }
+      const v=t.closest("[data-awv]"); if(v){ awView=v.dataset.awv; renderAwards(); return; }
+      const f=t.closest("[data-sfocus]"); if(f){ if(e.metaKey||e.ctrlKey||e.shiftKey||e.altKey||e.button!==0) return; e.preventDefault(); closeAwards(); goFocus(f.dataset.sfocus); return; } });
+  }
+  o.hidden=false; awOpen=true; document.documentElement.classList.add("srch-open"); renderAwards(); $("awres").scrollTop=0; setTimeout(()=>$("awdone").focus(),30);
+}
+let awOpen=false;
+function closeAwards(){ const o=$("awp"); if(!o||o.hidden) return; o.hidden=true; awOpen=false; document.documentElement.classList.remove("srch-open"); const b=$("awbtn"); if(b) b.focus({preventScroll:true}); }
+document.addEventListener("keydown",e=>{ if(awOpen && e.key==="Escape") closeAwards(); });
+function awIcs(dates){ const now=new Date().toISOString().replace(/[-:]/g,"").replace(/\.\d+/,"");
+  return "data:text/calendar;charset=utf-8,"+encodeURIComponent(["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Rich's One-Stop Showtimes//EN","CALSCALE:GREGORIAN",
+    ...dates.map(d=>["BEGIN:VEVENT",`UID:aw-${normT(d.body+d.event)}-${ymdC(d.on_date)}@richs-showtimes`,`DTSTAMP:${now}`,`DTSTART;VALUE=DATE:${ymdC(d.on_date)}`,`DTEND;VALUE=DATE:${nextDay(d.on_date)}`,`SUMMARY:${icsEsc("🏆 "+d.body+" "+d.event.toLowerCase())}`,`DESCRIPTION:${icsEsc("Awards season on "+location.origin+location.pathname)}`,"END:VEVENT"].join("\r\n")),"END:VCALENDAR"].join("\r\n")); }
+function renderAwards(){
+  const today=todayStr(), out=$("awres");
+  const dayTxt=d=>new Date(d+"T12:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",year:d.slice(0,4)==String(THIS_YEAR)?undefined:"numeric"});
+  const dates=(DATA.awDates||[]).slice().sort((a,b)=>a.on_date.localeCompare(b.on_date)), next=dates.filter(d=>d.on_date>=today), past=dates.filter(d=>d.on_date<today);
+  const oscar=dates.find(d=>d.body==="Oscars"&&d.event==="Ceremony");
+  let html=`<p class="srhint">This season's nominations and wins, from the fall festivals through the Oscars${oscar?` on ${dayTxt(oscar.on_date)}`:""}. Tap a movie's 🏆 line to see every nomination.</p>`;
+  if(next.length){ html+=`<div class="srhd">Coming up</div><ul class="awdates">${next.slice(0,5).map(d=>`<li><span>${dayTxt(d.on_date)}</span> ${esc(d.body)} ${esc(d.event.toLowerCase())}</li>`).join("")}</ul>`;
+    if(next.length>5||past.length) html+=`<details class="awmore"><summary>All dates</summary><ul class="awdates">${dates.map(d=>`<li class="${d.on_date<today?"done":""}"><span>${dayTxt(d.on_date)}</span> ${esc(d.body)} ${esc(d.event.toLowerCase())}</li>`).join("")}</ul></details>`;
+    html+=`<a class="pill awcal" href="${awIcs(next)}" download="awards-season.ics">＋ Add the ${next.length} dates to my calendar</a>`; }
+  /* Where each contender can be seen */
+  const cnt={}; for(const s of DATA.shows) if(s[1]>=today){ (cnt[s[2]]=cnt[s[2]]||new Set()).add(s[0]); }
+  const playing=new Map(); for(const id in cnt){ const m=DATA.movies[id]; if(m) playing.set(awKey(m.t), id); }
+  const coming=new Map(); for(const r of (DATA.releases||[])) if(r.d>=today && !coming.has(awKey(r.t))) coming.set(awKey(r.t), r);
+  const evs=new Map(); for(const e of (DATA.calendar||[])) if(e.d>=today && !evs.has(awKey(e.t))) evs.set(awKey(e.t), e);
+  const films=[...awIndex().entries()].map(([k,x])=>{ const mid=playing.get(k), m=mid&&DATA.movies[mid], r=coming.get(k), ev=evs.get(k);
+    const tm=(m&&m.tm)||(r&&r.tm)||(ev&&ev.tm)||(DATA.awTm||{})[x.film]||null; const home=tm&&((tm.stream&&tm.stream.length)||(tm.free&&tm.free.length)||(tm.rent&&tm.rent.length));
+    return {k,x,mid,m,r,ev,tm,home, grp: mid?0 : (r||ev)?1 : home?2 : 3, sc:awScore(x), top:x.rows.some(a=>a.top)}; })
+    .filter(f=>awView!=="top"||f.top).sort((a,b)=>a.grp-b.grp||b.sc-a.sc||a.x.film.localeCompare(b.x.film));
+  html+=`<div class="awtabs"><button class="pill" data-awv="all" aria-pressed="${awView==="all"}">All contenders</button><button class="pill" data-awv="top" aria-pressed="${awView==="top"}">Top-prize contenders</button></div>`;
+  const GRP=["Playing near you","Opening in theaters","Watch at home","Not showing here or streaming yet"];
+  for(let g=0; g<4; g++){ const list=films.filter(f=>f.grp===g); if(!list.length) continue;
+    const rows=list.map(f=>{ const {x}=f; let key, where;
+      if(f.mid){ const pt=plainTitle(f.m.t); key="m:"+normT(pt); const ds=DATA.shows.filter(s=>s[2]===f.mid&&s[1]>=today).map(s=>s[1]).sort(); LISTCAT[key]={t:pt, d:ds[0]||today, lbl:null, r:f.m.r||null, rt:f.m.rt||null, src:null, now:true};
+        where=`<a href="${movieHref(f.mid)}" data-sfocus="${esc(f.mid)}">Showtimes at ${cnt[f.mid].size} of your theaters ›</a>`; }
+      else if(f.r){ const d=f.r.det||{}; key="r:"+f.r.src; LISTCAT[key]={t:f.r.t, d:f.r.d, lbl:f.r.lbl||null, r:d.rating||null, rt:d.runtime_min||null, src:f.r.src};
+        where=f.r.lbl?`Opens ${esc(f.r.lbl)}`:/expands/i.test(f.r.scope||"")?`Expands wide ${dayTxt(f.r.d)}`:`Opens ${dayTxt(f.r.d)}${f.r.k==="arthouse"||f.r.k==="limited"?" in limited release, so maybe not near you at first":""}`; }
+      else if(f.ev){ const plain=plainTitle(f.ev.t); key="e:"+normT(f.ev.t); LISTCAT[key]={t:plain, d:f.ev.d, lbl:null, r:f.ev.r||null, rt:null, src:f.ev.src||null};
+        where=`${esc(f.ev.series||"Special showing")} ${dayTxt(f.ev.d)}`; }
+      else { key="c:aw-"+f.k; LISTCAT[key]={t:x.film, d:"2099-12-31", lbl:f.home?"Watch at home":"No date here yet", r:null, rt:null, src:null};
+        where=f.home?"":`No showings near you or streaming in the U.S. yet`; }
+      const home=f.tm&&f.grp>=1 ? (()=>{ const t=f.tm; const a=t.stream&&t.stream.length, fr=t.free&&t.free.length, re=t.rent&&t.rent.length;
+        const txt=a?`Streaming on ${esc(t.stream.slice(0,2).join(", "))}`:fr?`Free on ${esc(t.free.slice(0,2).join(", "))}`:re?`Rent or buy on ${esc(t.rent.slice(0,2).join(", "))}`:"";
+        return txt?(t.watch_url?`<a href="${url(t.watch_url)}" target="_blank" rel="noopener">${txt} ›</a>`:txt):""; })() : "";
+      const sub=[where, home].filter(Boolean).join(" · ");
+      return `<div class="srow">${starBtn(key, LISTCAT[key].t)}<div class="srbody"><span class="srt">${esc(f.m?f.m.t:f.r?f.r.t:x.film)}</span>${sub?`<div class="smeta">${sub}</div>`:""}${awDetails(x)}</div></div>`; }).join("");
+    html+= g===3 ? `<details class="awmore"><summary class="srhd">${GRP[g]} (${list.length})</summary>${rows}</details>` : `<div class="srhd">${GRP[g]} (${list.length})</div>${rows}`; }
+  html+=`<p class="srhint awsrc">Nominations and wins from each group's official announcement; dates from <a href="https://awardswatch.com/" target="_blank" rel="noopener">AwardsWatch</a>. New nominations are added on announcement day.</p>`;
+  out.innerHTML=html;
+}
+document.addEventListener("click",e=>{ if(e.target.closest("#awbtn")) openAwards(); });
+
 /* ---------- Genres ----------
    Broad groups built from TMDB's genres, Fandango's, and The Numbers', whichever we have for a film. */
 const GENRES=[["act","Action & Adventure",/action|adventure|\bwar\b|western/i],["com","Comedy",/comedy/i],["dra","Drama & Romance",/drama|romance|biograph|histor/i],["sci","Sci-Fi & Fantasy",/sci-?fi|science fiction|fantasy/i],["hor","Horror",/horror/i],["thr","Thriller, Crime & Mystery",/thriller|suspense|myster|crime/i],["fam","Family",/family/i],["doc","Documentary",/documentar/i],["mus","Music & Concerts",/music|concert|performing arts|performance/i]];
@@ -786,7 +900,7 @@ function runSearch(){
   if(movs.length){ html+=`<div class="srhd">Playing now</div>`;
     for(const {id,m,p} of movs){ const pt=plainTitle(m.t), mk="m:"+normT(pt); n++; shown.add(keyT(m.t));
       const ds=DATA.shows.filter(s=>s[2]===id && s[1]>=today).map(s=>s[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||today, lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true};
-      const meta=[m.r?`<span class="rate">${esc(m.r)}</span>`:"", fmtRt(m.rt), m.anim===true?"Animated":"", gLabel(m,"m",2)].filter(Boolean).join(" · ");
+      const meta=[m.r?`<span class="rate">${esc(m.r)}</span>`:"", fmtRt(m.rt), m.anim===true?"Animated":"", gLabel(m,"m",2), awOf(m.t)?"🏆 "+esc(awSummary(awOf(m.t),1)):""].filter(Boolean).join(" · ");
       html+=`<div class="srow">${starBtn(mk, pt)}<div class="srbody"><a class="srt" href="${movieHref(id)}" data-sfocus="${esc(id)}">${esc(m.t)}</a><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${showLink(id)}</div></div></div>`; }
     html+=more(movAll.length,20); }
   if(evRows.length){ html+=`<div class="srhd">Special events</div>`;
@@ -813,7 +927,8 @@ function relRow(r, tagHtml, dayHtml){
   const facts=[d.rating?`Rated ${esc(d.rating)}${d.rating_reason?` for ${esc(d.rating_reason)}`:""}`:"Not yet rated", d.runtime_min?`${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m`:"Runtime not announced", gLabel(r,"r")||(d.genre?esc(d.genre):null), (d.method?/animation/i.test(d.method):(r.tm&&r.tm.genres||[]).includes("Animation"))?"Animated":null, d.franchise?`${esc(d.franchise)} series`:null].filter(Boolean).join(" · ");
   const thin=!d.synopsis && !(d.stars||[]).length && !(d.directors||[]).length;
   const lk="r:"+r.src; LISTCAT[lk]={t:r.t, d:r.d, lbl:r.lbl||null, r:d.rating||null, rt:d.runtime_min||null, src:r.src};
-  return `<details class="rel"><summary>${starBtn(lk, r.t)}<span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${gLabel(r,"r",2)?`<span class="gn">${gLabel(r,"r",2)}</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
+  return `<details class="rel"><summary>${starBtn(lk, r.t)}<span class="rt">${esc(r.t)}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${gLabel(r,"r",2)?`<span class="gn">${gLabel(r,"r",2)}</span>`:""}${awOf(r.t)?`<span class="awg" title="Awards contender">🏆</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
+    ${awOf(r.t)?awDetails(awOf(r.t)):""}
     ${d.synopsis?`<p>${esc(d.synopsis)}</p>`:""}
     <div class="facts">${facts}</div>
     ${(d.directors||[]).length?`<div><b>Director</b>${nameLinks(d.directors)}</div>`:""}
@@ -828,11 +943,12 @@ function renderSoon(){
   const on=k=>S.soon.includes(k);
   const rateOK=e=>ratingOK({r:e.r,csm:e.csm,g:e.g,sp:e.series,fam:e.fam}, true);
   const evAll=on("special")?(DATA.calendar||[]).filter(e=>e.d>=today):[];
-  const evs=evAll.filter(e=>rateOK(e) && genreOK(e,"e") && evTypeOK(e)); let evHidden=evAll.length-evs.length;
+  const evs=evAll.filter(e=>rateOK(e) && genreOK(e,"e") && evTypeOK(e) && (!S.osc || awOf(e.t))); let evHidden=evAll.length-evs.length;
   const nrHid=(S.who==="family" && !S.showNR) ? evAll.filter(e=>(!e.r||e.r==="NR") && !rateOK(e)).length : 0;
   // Coming films follow the same Family / Grown-ups choice once they have a rating; unrated ones always show.
   const relOK=r=>{ const d=r.det; if(d && d.rating && !S.ratings.has(d.rating)) return false;
     if(S.type!=="all"){ const tg=r.tm&&r.tm.genres; const anim=d&&d.method ? /animation/i.test(d.method) : (tg&&tg.length ? tg.includes("Animation") : null); if(anim===null || (S.type==="anim")!==anim) return false; }
+    if(S.osc && !awOf(r.t)) return false;
     return genreOK(r,"r"); };
   /* Re-releases from the release calendar ride with special events. */
   const relAll=(DATA.releases||[]).filter(r=>r.d>=today && on(r.k==="rerelease"?"special":r.k));
@@ -1108,7 +1224,7 @@ function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_b
 function filmBlock(mid, groups){
   const m=DATA.movies[mid];
   const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`<b class="rtm">${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m</b>`:"Runtime not announced", m.anim===true?"Animated":(m.anim===false && !gLabel(m,"m"))?"Live action":null, gLabel(m,"m")||null].filter(Boolean).map(x=>`<span class="nb">${x}</span>`).join(" · ");
-  const badges=m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"";
+  const badges=(m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"")+(awOf(m.t)?awDetails(awOf(m.t)):"");
   const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Metacritic</small></span>`;
   const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
@@ -1137,6 +1253,7 @@ function filmBlock(mid, groups){
 const TOUR=[
   {center:true, next:"Take the tour", title:"Rich's One-Stop Showtimes", text:"<i class='tagline'>Going to the movies really shouldn't be this hard.</i>Every movie at your favorite theaters on one page, filtered to the ratings you want (e.g., PG only), with critics' scores, age guides, trailers, and the time you'll walk out.<br><br>Richard built this because he was sick of checking five different sites to answer three questions: Is it any good? Is it right for kids of different ages? Is it playing at a good theater?<br><br>Built for families, but adaptable to everyone.<span class='madeby'>Created by Richard Magann</span>"},
   {sel:"#who", title:"Family or Grown-ups", text:"<b>Family</b> shows the ratings listed under the button, plus unrated movies that look family-friendly. If your kids watch PG-13, tap the ratings under Family (the ✎) and check <b>Count PG-13 as Family</b>; this phone remembers it. <b>Grown-ups</b> shows everything. Switch any time."},
+  {sel:"#awbtn", title:"Awards season", text:"Tap the trophy for awards season: the dates nominations and winners are announced, and every contender grouped by where you can see it now, in theaters near you or at home. Movies with nominations show a 🏆 line you can tap for the details."},
   {sel:"#srchbtn", title:"Search", text:"Looking for a particular movie? Tap the magnifying glass and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away, and you can tap ☆ to add it to My list."},
   {sel:".tabs", title:"Four tabs", text:"<b>Showtimes</b>: what's playing, day by day, for the next week or so.<br><b>Specials</b>: this week's can't-miss one-off and classic screenings. Think Back to the Future on the big screen again!<br><b>Coming soon</b>: what's coming out in the weeks and months ahead.<br><b>★ My list</b>: movies you've starred (☆), by date, with rankings and calendar reminders."},
   {sel:"#days", title:"Pick a day", text:"Swipe for more days. Listings usually run about 10 days ahead; the last couple of days fill in as theaters post their schedules."},
@@ -1147,7 +1264,9 @@ const TOUR=[
   {sel:"#tourbtn", title:"Want this for your city?", text:"Request your own page, set up with your favorite theaters and ratings. Fill out a short form and Richard will make it happen!<br><br>Tap ? any time to see this tour again.", cta:true}
 ];
 /* Shown once to people who already took the tour, so they find what was added since. */
-const NEW_KEY="mfs-new-nov26";
+const NEW_KEY="mfs-new-nov26", NEW2_KEY="mfs-new-awards27";
+/* Shown once to anyone who already saw the full tour or the first What's new. */
+const WHATSNEW2=[{sel:"#awbtn", title:"New: Awards season", text:"Tap the trophy to follow awards season: when the Golden Globe and Oscar nominations come out, and every contender grouped by where you can see it now, in theaters near you or at home. Tap ☆ to save one to My list. Movies with nominations also show a 🏆 line you can tap."}];
 const WHATSNEW=[
   {center:true, next:"Show me", title:"What's new", text:"A few things were added since you took the tour: search, a My list tab, genre filters, and PG-13 as part of Family. Four quick stops."},
   {sel:"#srchbtn", title:"Search", text:"Tap the magnifying glass and type part of a title, or a director or star. It finds the movie whether it's playing now, a special event or months away. Tap ☆ to save it."},
@@ -1159,7 +1278,7 @@ let tourEls=null, tourI=0;
 function tourKey(){ return "mfs-tour-v6"; }
 let tourList=null; // fixed when the tour starts, so switching tabs mid-tour doesn't renumber the steps
 function tourSteps(){ return tourList || TOUR.filter(s=>s.center || s.mode || document.querySelector(s.sel)); }
-function endTour(){ if(!tourEls) return; tourEls.forEach(e=>e.remove()); tourEls=null; tourList=null; if(S.mode!=="show"){ S.mode="show"; render(); window.scrollTo({top:0}); } window.removeEventListener("resize",placeTour); window.removeEventListener("scroll",placeTour,true); try{localStorage.setItem(tourKey(),"1"); localStorage.setItem(NEW_KEY,"1");}catch(e){} }
+function endTour(){ if(!tourEls) return; tourEls.forEach(e=>e.remove()); tourEls=null; tourList=null; if(S.mode!=="show"){ S.mode="show"; render(); window.scrollTo({top:0}); } window.removeEventListener("resize",placeTour); window.removeEventListener("scroll",placeTour,true); try{localStorage.setItem(tourKey(),"1"); localStorage.setItem(NEW_KEY,"1"); localStorage.setItem(NEW2_KEY,"1");}catch(e){} }
 function placeTour(){
   if(!tourEls) return;
   const steps=tourSteps(); const st=steps[tourI];
@@ -1200,8 +1319,8 @@ function startTour(custom){
   window.addEventListener("resize",placeTour); window.addEventListener("scroll",placeTour,true);
   showTourStep(0);
 }
-function maybeTour(){ let seen=false, seenNew=false; try{seen=localStorage.getItem(tourKey())==="1"; seenNew=localStorage.getItem(NEW_KEY)==="1";}catch(e){}
-  if(!seen) setTimeout(startTour,400); else if(!seenNew) setTimeout(()=>startTour(WHATSNEW),400); }
+function maybeTour(){ let seen=false, seenNew=false, seenNew2=false; try{seen=localStorage.getItem(tourKey())==="1"; seenNew=localStorage.getItem(NEW_KEY)==="1"; seenNew2=localStorage.getItem(NEW2_KEY)==="1";}catch(e){}
+  if(!seen) setTimeout(startTour,400); else if(!seenNew) setTimeout(()=>startTour([...WHATSNEW, ...WHATSNEW2]),400); else if(!seenNew2) setTimeout(()=>startTour(WHATSNEW2),400); }
 
 /* ---------- Request your city ---------- */
 let reqOpener=null;
