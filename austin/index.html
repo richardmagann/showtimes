@@ -268,6 +268,8 @@ a.evt:hover,a.evt:focus-visible{color:var(--accent);text-decoration:underline}
 .rel summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px;padding:10px 2px;cursor:pointer;list-style:none}
 .rel summary::-webkit-details-marker{display:none}
 .rel summary{position:relative;padding-right:24px}
+.rel summary:has(.rposter){padding-left:48px;min-height:52px}
+.rel summary .rposter{position:absolute;left:2px;top:10px;margin:0}
 .rel summary::after{content:"+";position:absolute;right:4px;top:10px;color:var(--muted);font-weight:700}
 .rel[open] summary::after{content:"\2212"}
 .rel .yr{color:var(--muted)}
@@ -291,6 +293,14 @@ html.srch-open,html.srch-open body{overflow:hidden}
 a.srt:hover{text-decoration:underline}
 .smeta{font-size:.84rem;color:var(--muted);margin-top:2px}
 .srchadd{margin:18px 0 0}
+.fpost{flex:none;display:block;line-height:0}
+.fposter{width:72px;height:108px;object-fit:cover;border-radius:6px;background:var(--chip);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+@media (min-width:700px){ .fposter{width:92px;height:138px} }
+/* On a phone the poster takes the left column and the scores move under the title, so titles get room. */
+@media (max-width:699px){ .ftop:has(.fpost){display:grid;grid-template-columns:72px minmax(0,1fr);grid-template-areas:"p t" "p s";column-gap:12px;row-gap:8px}
+  .ftop:has(.fpost) .fpost{grid-area:p;align-self:start} .ftop:has(.fpost) .ftitle{grid-area:t} .ftop:has(.fpost) .scores{grid-area:s;justify-self:start} }
+.rposter{width:34px;height:51px;object-fit:cover;border-radius:4px;flex:none;background:var(--chip);margin-right:8px;vertical-align:middle}
+.sposter{width:40px;height:60px;object-fit:cover;border-radius:4px;flex:none;background:var(--chip)}
 .srmore{font-size:.82rem;color:var(--muted);margin:6px 0 0}
 #awp{position:fixed;inset:0;z-index:58;background:var(--bg);display:flex;flex-direction:column}
 #awp[hidden]{display:none}
@@ -466,7 +476,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="addcity"><div><b>Want this for your city?</b><span>Pick your favorite theaters and get your own family page.</span></div><button class="done" id="reqbtn2">Request your city</button></div>
 <div class="foot">
   <div class="copyright"><strong>Rich's One-Stop Showtimes</strong> was created by Richard Magann. © 2026 Richard Magann. All rights reserved.</div>
-  <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Trailers: YouTube. Where to watch at home and trailer links: <a href="https://www.themoviedb.org">TMDB</a>, with streaming data from <a href="https://www.justwatch.com">JustWatch</a>. This product uses the TMDB API but is not endorsed or certified by TMDB. Upcoming release dates: <a href="https://www.the-numbers.com/movies/release-schedule">The Numbers</a>. The Calendar also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
+  <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Trailers: YouTube. Posters, release dates, where to watch at home and trailer links: <a href="https://www.themoviedb.org">TMDB</a>, with streaming data from <a href="https://www.justwatch.com">JustWatch</a>. This product uses the TMDB API but is not endorsed or certified by TMDB. Upcoming release dates: <a href="https://www.the-numbers.com/movies/release-schedule">The Numbers</a>. The Calendar also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
   <div><strong>Times.</strong> "Out ~" times are when you should walk out: the start plus the movie's runtime plus about 20 minutes of trailers, rounded to 5 minutes. Theaters vary, so treat them as estimates.</div>
   <div><strong>Distances</strong> are straight-line miles from home, rounded to the nearest mile, not driving miles.</div>
   <div><strong>Oscar notes</strong> and a few classic re-release ratings were added by hand and may be incomplete. Always check the rating with the theater before you buy.</div>
@@ -531,7 +541,7 @@ async function fetchData(){
     sb(`releases?select=title,release_date,date_label,scope,kind,distributor,source_url&release_date=gte.${ymd}&order=release_date,date_label.nullsfirst,title`, true).catch(()=>[]),
     sb(`release_details?select=source_url,rating,rating_reason,runtime_min,genre,method,franchise,synopsis,directors,stars`, true).catch(()=>[]),
     sb(`fandango_info?select=url,synopsis,trailer_url`, true).catch(()=>[]),
-    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres,oscars,us_dates&tmdb_id=not.is.null`, true).catch(()=>[]),
+    sb(`tmdb_info?select=ref,trailer_key,stream,free,rent,watch_url,genres,oscars,us_dates,poster_path&tmdb_id=not.is.null`, true).catch(()=>[]),
     sb(`awards?select=body,category,film,film_year,person,result,top&season=eq.${AW_SEASON}&order=body,category`, true).catch(()=>[]),
     sb(`awards_dates?select=body,event,on_date&season=eq.${AW_SEASON}&order=on_date`).catch(()=>[])
   ]);
@@ -847,7 +857,7 @@ function renderAwards(){
         return txt?(t.watch_url?`<a href="${url(t.watch_url)}" target="_blank" rel="noopener">${txt} ›</a>`:txt):""; })() : "";
       const rt=(f.m&&f.m.r)||(f.r&&f.r.det&&f.r.det.rating)||(f.ev&&f.ev.r)||null;
       const sub=[rt?`<span class="rate">${esc(rt)}</span>`:"", where, home].filter(Boolean).join(" · ");
-      return `<div class="srow">${starBtn(key, LISTCAT[key].t)}<div class="srbody"><span class="srt">${esc(f.m?f.m.t:f.r?f.r.t:x.film)}</span>${sub?`<div class="smeta">${sub}</div>`:""}${awDetails(x)}</div></div>`; }).join("");
+      return `<div class="srow">${starBtn(key, LISTCAT[key].t)}${posterImg({tm:f.tm},"w92","sposter")}<div class="srbody"><span class="srt">${esc(f.m?f.m.t:f.r?f.r.t:x.film)}</span>${sub?`<div class="smeta">${sub}</div>`:""}${awDetails(x)}</div></div>`; }).join("");
     const note=g===1?`<p class="srmore">“Limited” means a few big-city theaters first; it may not reach yours until the wide date.</p>`:"";
     html+= g===3 ? `<details class="awmore"><summary class="srhd">${GRP[g]} (${list.length})</summary>${rows}</details>` : `<div class="srhd">${GRP[g]} (${list.length})</div>${note}${rows}`; }
   html+=`<p class="srhint awsrc">Nominations and wins from each group's official announcement; dates from <a href="https://awardswatch.com/" target="_blank" rel="noopener">AwardsWatch</a>. New nominations are added on announcement day.</p>`;
@@ -927,13 +937,13 @@ function runSearch(){
     for(const {id,m,p} of movs){ const pt=plainTitle(m.t), mk="m:"+normT(pt); n++; shown.add(keyT(m.t));
       const ds=DATA.shows.filter(s=>s[2]===id && s[1]>=today).map(s=>s[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||today, lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true};
       const meta=[m.r?`<span class="rate">${esc(m.r)}</span>`:"", fmtRt(m.rt), m.anim===true?"Animated":"", gLabel(m,"m",2), awOf(m.t,m.y)?"🏆 "+esc(awSummary(awOf(m.t,m.y),1)):m.osc?"🏆 Oscars: "+esc(m.osc):oscHist(m)?"🏆 Oscars: "+esc(oscHistTxt(oscHist(m))):""].filter(Boolean).join(" · ");
-      html+=`<div class="srow">${starBtn(mk, pt)}<div class="srbody"><a class="srt" href="${movieHref(id)}" data-sfocus="${esc(id)}">${esc(m.t)}</a><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${showLink(id)}</div></div></div>`; }
+      html+=`<div class="srow">${starBtn(mk, pt)}${posterImg(m,"w92","sposter")}<div class="srbody"><a class="srt" href="${movieHref(id)}" data-sfocus="${esc(id)}">${esc(m.t)}</a><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${showLink(id)}</div></div></div>`; }
     html+=more(movAll.length,20); }
   if(evRows.length){ html+=`<div class="srhd">Special events</div>`;
     for(const {list,p,mid} of evRows){ const e=list[0], plain=plainTitle(e.t), ek="e:"+normT(e.t), days=[...new Set(list.map(x=>x.d))].sort(); n++; shown.add(keyT(e.t));
       LISTCAT[ek]={t:plain, d:days[0], lbl:null, r:e.r||null, rt:null, src:e.src||null};
       const meta=[e.r?`<span class="rate">${esc(e.r)}</span>`:"", esc(e.series||""), gLabel(e,"e",2), awOf(e.t,e.y)?"🏆 "+esc(awSummary(awOf(e.t,e.y),1)):oscHist(e)?"🏆 Oscars: "+esc(oscHistTxt(oscHist(e))):""].filter(Boolean).join(" · ");
-      html+=`<div class="srow">${starBtn(ek, plain)}<div class="srbody"><span class="srt">${esc(e.t)}${e.y&&e.y<THIS_YEAR?` <span class="yr">(${esc(e.y)})</span>`:""}</span><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${dayTxt(days[0])}${days.length>1?` + ${days.length-1} more date${days.length>2?"s":""}`:""}</div><div class="smeta">${mid&&cnt[mid]?showLink(mid):e.src?`<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src)?"Tickets on Fandango":"Event page"} ›</a>`:""}</div></div></div>`; }
+      html+=`<div class="srow">${starBtn(ek, plain)}${posterImg(e,"w92","sposter")}<div class="srbody"><span class="srt">${esc(e.t)}${e.y&&e.y<THIS_YEAR?` <span class="yr">(${esc(e.y)})</span>`:""}</span><div class="smeta">${meta}</div><div class="smeta">${p?esc(p)+" · ":""}${dayTxt(days[0])}${days.length>1?` + ${days.length-1} more date${days.length>2?"s":""}`:""}</div><div class="smeta">${mid&&cnt[mid]?showLink(mid):e.src?`<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src)?"Tickets on Fandango":"Event page"} ›</a>`:""}</div></div></div>`; }
     html+=more(evAllRows.length,20); }
   /* Coming releases (a re-release already shown as a special event is not repeated) */
   const relSeen=new Set(), relAll=(DATA.releases||[]).filter(r=>r.d>=today && !(r.k==="rerelease" && shown.has(keyT(r.t))) && !relSeen.has(keyT(r.t)+"|"+r.d) && relSeen.add(keyT(r.t)+"|"+r.d)).map(r=>{ const d=r.det||{}; return {r, p:why(normT(r.t).includes(q), d.directors, d.stars, null)}; }).filter(x=>x.p!==false), rels=relAll.slice(0,30);
@@ -953,7 +963,7 @@ function relRow(r, tagHtml, dayHtml){
   const facts=[d.rating?`Rated ${esc(d.rating)}${d.rating_reason?` for ${esc(d.rating_reason)}`:""}`:"Not yet rated", d.runtime_min?`${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m`:"Runtime not announced", gLabel(r,"r")||(d.genre?esc(d.genre):null), (d.method?/animation/i.test(d.method):(r.tm&&r.tm.genres||[]).includes("Animation"))?"Animated":null, d.franchise?`${esc(d.franchise)} series`:null].filter(Boolean).join(" · ");
   const thin=!d.synopsis && !(d.stars||[]).length && !(d.directors||[]).length;
   const lk="r:"+r.src; LISTCAT[lk]={t:r.t, d:r.d, lbl:r.lbl||null, r:d.rating||null, rt:d.runtime_min||null, src:r.src};
-  return `<details class="rel"><summary>${starBtn(lk, r.t)}<span class="rt">${esc(r.t)}${awOf(r.t)?` <span class="awg" title="Awards contender">🏆</span>`:""}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${gLabel(r,"r",2)?`<span class="gn">${gLabel(r,"r",2)}</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
+  return `<details class="rel"><summary>${starBtn(lk, r.t)}${posterImg(r,"w92","rposter")}<span class="rt">${esc(r.t)}${awOf(r.t)?` <span class="awg" title="Awards contender">🏆</span>`:""}</span>${d.rating?`<span class="rate">${esc(d.rating)}</span>`:""}${d.runtime_min?`<span class="rtm2">${Math.floor(d.runtime_min/60)}h ${pad(d.runtime_min%60)}m</span>`:""}${gLabel(r,"r",2)?`<span class="gn">${gLabel(r,"r",2)}</span>`:""}${tagHtml}${dayHtml}</summary><div class="relbody">
     ${awOf(r.t)?awDetails(awOf(r.t)):""}
     ${d.synopsis?`<p>${esc(d.synopsis)}</p>`:""}
     <div class="facts">${facts}</div>
@@ -1028,7 +1038,7 @@ function renderSoon(){
           return `<div class="evday">${dayTxt(x.d)}</div><div class="evwhere">${rows}</div>`; }).join("");
         const plain=plainTitle(e.t); const ek="e:"+normT(e.t); LISTCAT[ek]={t:plain, d:days[0], lbl:null, r:e.r||null, rt:null, src:e.src||null};
         const noTrailer=/concert|met opera|mystery/i.test(e.series||"") || /double feature/i.test(e.t);
-        html+=`<details class="rel"><summary>${starBtn(ek, plain)}<span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}${gLabel(e,"e",2)?`<span class="gn">${gLabel(e,"e",2)}</span>`:""}${awOf(e.t,e.y)||oscHist(e)?`<span class="awg" title="${oscHist(e)?"Oscars: "+esc(oscHistTxt(oscHist(e))):"Awards contender"}">🏆</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
+        html+=`<details class="rel"><summary>${starBtn(ek, plain)}${posterImg(e,"w92","rposter")}<span class="rt">${esc(e.t)}</span>${e.y&&e.y<THIS_YEAR?`<span class="yr">(${esc(e.y)})</span>`:""}<span class="tag ${tagCls(e.series)}">${esc(e.series)}</span>${e.r?`<span class="rate">${esc(e.r)}</span>`:""}${gLabel(e,"e",2)?`<span class="gn">${gLabel(e,"e",2)}</span>`:""}${awOf(e.t,e.y)||oscHist(e)?`<span class="awg" title="${oscHist(e)?"Oscars: "+esc(oscHistTxt(oscHist(e))):"Awards contender"}">🏆</span>`:""}<span class="evsum">${when}${ths.size?` · ${ths.size} theater${ths.size>1?"s":""}`:""}</span></summary><div class="relbody">
           ${oscHist(e)?oscHistDetails(oscHist(e)):""}${e.syn?`<p>${esc(e.syn)}</p>`:""}${e.csm!=null?`<div class="facts">Common Sense Media: ages ${esc(e.csm)}+</div>`:""}
           ${sched}
           <div class="links">${noTrailer?"":`<a class="trl" href="${trailerHref(e, plain, e.y&&e.y<THIS_YEAR?e.y:"")}" target="_blank" rel="noopener">▶ Trailer</a>`}<a href="${url(e.src)}" target="_blank" rel="noopener">${/fandango\.com/.test(e.src||"")?"Tickets on Fandango":"Event page"}</a></div>${/concert|met opera|mystery|fan event|special event|drive-in/i.test(e.series||"")?"":homeHtml(e, plain)}</div></details>`;
@@ -1259,6 +1269,10 @@ function relDatesTxt(x){ const u=x&&x.tm&&x.tm.us_dates; if(!u) return "";
   else if(u.wide||u.limited) parts.push(`${u.wide?"":"Limited "}${f(u.wide||u.limited)}`);
   if(u.digital) parts.push(`At home ${f(u.digital)}`);
   return parts.join(" · "); }
+/* Posters from TMDB's image server (credited in the footer). Empty when TMDB has none. */
+const POSTER="https://image.tmdb.org/t/p/";
+function posterOf(x){ const p=x&&x.tm&&x.tm.poster_path; return p && /^\/[\w.-]+$/.test(p) ? p : ""; }
+function posterImg(x, size, cls){ const p=posterOf(x); return p ? `<img class="${cls}" src="${POSTER}${size}${p}" alt="" loading="lazy" decoding="async">` : ""; }
 function scoreClass(v){return v>=70?"g":v>=55?"m":"b";}
 function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_blank" rel="noopener">${esc(n)}</a>`:esc(n)).join(", ");}
 function filmBlock(mid, groups){
@@ -1286,7 +1300,7 @@ function filmBlock(mid, groups){
      ${links}</div></details>`
      : links;
   const spBanner = m.sp ? `<div class="spflag">Special showing<span>${esc(m.sp)}</span></div>` : "";
-  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop"><div class="ftitle"><h3>${(()=>{ const pt=plainTitle(m.t), mk="m:"+normT(m.t); if(!LISTCAT[mk]){ const ds=DATA.shows.filter(x=>x[2]===mid).map(x=>x[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||todayStr(), lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true}; } return starBtn(mk, pt); })()}<a class="ttl" href="${movieHref(mid)}" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</a>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
+  return `<article class="film${m.sp?" is-sp":""}">${spBanner}<div class="ftop">${posterOf(m)?`<a class="fpost" href="${movieHref(mid)}" data-focus="${mid}" tabindex="-1" aria-hidden="true">${posterImg(m,"w185","fposter")}</a>`:""}<div class="ftitle"><h3>${(()=>{ const pt=plainTitle(m.t), mk="m:"+normT(m.t); if(!LISTCAT[mk]){ const ds=DATA.shows.filter(x=>x[2]===mid).map(x=>x[1]).sort(); LISTCAT[mk]={t:pt, d:ds[0]||todayStr(), lbl:null, r:m.r||null, rt:m.rt||null, src:null, now:true}; } return starBtn(mk, pt); })()}<a class="ttl" href="${movieHref(mid)}" data-focus="${mid}" title="Show only this movie">${esc(m.t)}</a>${m.y&&m.y<THIS_YEAR?` <span class="yr">(${esc(m.y)})</span>`:""}</h3><div class="facts">${facts}</div>${m.sp==="Mystery screening"?"":`<div class="trlrow"><a class="trl" href="${trailerHref(m, plainTitle(m.t), m.y)}" target="_blank" rel="noopener">▶ Trailer</a></div>`}${homeLine}${badges?`<div class="badges">${badges}</div>`:""}</div><div class="scores">${mc}${cs}</div></div>
     ${m.note?`<div class="note">${esc(m.note)}</div>`:""}${timeLines}${credits}</article>`;
 }
 
