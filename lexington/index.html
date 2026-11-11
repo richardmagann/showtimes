@@ -196,6 +196,11 @@ section.group{margin-top:22px}
 /* Theater / day headings stay pinned under the top bar while you scroll through their movies. */
 .group>.ghead{position:sticky;top:calc(var(--barh,150px) + env(safe-area-inset-top,0px) - 1px);z-index:3;background:var(--bg);padding-top:8px;margin-top:-8px}
 .ghead h2{font-weight:700;font-size:1.2rem;margin:0;line-height:1.2}
+.gtog{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:36px}
+.gtog:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gtog .chev{flex:none;color:var(--muted);transition:transform .15s}
+.group.shut .gtog .chev{transform:rotate(-90deg)}
+.group.shut .gtog{color:var(--muted)}
 .ghead .meta{font-size:.82rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .rank{display:inline-block;font-family:var(--mono);font-size:.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 4px;margin-right:8px;vertical-align:2px}
 
@@ -579,6 +584,13 @@ const $=id=>document.getElementById(id);
 const PREF_KEY="mfs2-"+CITY;
 /* A household can count PG-13 as Family on this phone. It is a who-we-are setting, not a narrowing filter, so it is remembered. */
 const FAM13_KEY="mfs-fam13-"+CITY;
+/* Theaters folded shut in the By theater view; remembered on this device. Tap the name again to open. */
+const COLL_KEY="mfs-coll-"+CITY;
+const COLL=new Set((()=>{ try{ return JSON.parse(localStorage.getItem(COLL_KEY)||"[]"); }catch(e){ return []; } })().map(String));
+function toggleColl(tid){ COLL.has(tid)?COLL.delete(tid):COLL.add(tid); try{ localStorage.setItem(COLL_KEY, JSON.stringify([...COLL])); }catch(e){}
+  const before=$("th-"+tid), y=before?before.getBoundingClientRect().top:null; render();
+  const after=$("th-"+tid); if(after && y!=null) window.scrollBy(0, after.getBoundingClientRect().top-y); }
+document.addEventListener("click",e=>{ const b=e.target.closest("[data-coll]"); if(b){ e.preventDefault(); toggleColl(b.dataset.coll); } });
 function fam13(){ try{ return localStorage.getItem(FAM13_KEY)==="1"; }catch(e){ return false; } }
 function setFam13(on){ try{ on?localStorage.setItem(FAM13_KEY,"1"):localStorage.removeItem(FAM13_KEY); }catch(e){} }
 function famRatings(){ const r=[...DATA.defaultRatings]; if(fam13() && !r.includes("PG-13")) r.push("PG-13"); return r.sort((a,b)=>RATINGS.indexOf(a)-RATINGS.indexOf(b)); }
@@ -741,8 +753,9 @@ function renderShows(){
     for(const tid of FAV_ORDER){
       const tr=rows.filter(r=>r.th===tid); if(!tr.length) continue;
       const t=DATA.theaters[tid];
-      html+=`<section class="group"><div class="ghead"><h2>${t.rank?`<span class="rank">#${t.rank}</span>`:""}${esc(t.short)}</h2><span class="meta">${t.mi} mi</span></div>`;
-      for(const mid of [...new Set(tr.map(r=>r.m))].sort(byScore)) html+=filmBlock(mid, [[null, tr.filter(r=>r.m===mid)]]);
+      const shut=COLL.has(String(tid)), nf=new Set(tr.map(r=>r.m)).size;
+      html+=`<section class="group${shut?" shut":""}" id="th-${esc(tid)}"><div class="ghead"><h2><button class="gtog" data-coll="${esc(tid)}" aria-expanded="${!shut}" title="${shut?"Show":"Hide"} this theater"><svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>${t.rank?`<span class="rank">#${t.rank}</span>`:""}${esc(t.short)}</button></h2><span class="meta">${shut?`${nf} movie${nf>1?"s":""} hidden`:`${t.mi} mi`}</span></div>`;
+      if(!shut) for(const mid of [...new Set(tr.map(r=>r.m))].sort(byScore)) html+=filmBlock(mid, [[null, tr.filter(r=>r.m===mid)]]);
       html+=`</section>`;
     }
   } else {
