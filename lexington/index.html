@@ -784,7 +784,8 @@ function awDetails(x){ return `<details class="awd"><summary>🏆 ${esc(awSummar
 function oscHist(x){ const o=x&&x.tm&&x.tm.oscars; return o&&o.nom>0 ? o : null; }
 function oscHistTxt(o){ const bp=o.list.some(l=>l.won&&l.c==="Best Picture");
   return o.won ? (bp ? `won Best Picture${o.won>1?` + ${o.won-1} more`:""} · ${plural(o.nom,"nomination")}` : `won ${o.won} of ${plural(o.nom,"nomination")}`) : o.nom===1 ? `nominated for ${o.list[0].c}` : plural(o.nom,"nomination"); }
-function oscHistDetails(o){ return `<details class="awd"><summary>🏆 Oscars: ${esc(oscHistTxt(o))}</summary><ul class="awl">${o.list.map(l=>`<li><span class="awr ${l.won?"winner":"nominee"}">${l.won?"Won":"Nominated"}</span> ${esc(l.c)}${l.who&&l.who.length?` <span class="awp">${esc(l.who.join(", "))}</span>`:""}</li>`).join("")}</ul><div class="awp" style="font-size:.76rem">Oscar history from Wikidata; a Best Song nomination may be missing.</div></details>`; }
+/* A hand-written note, when there is one, is used as the headline; the list underneath still comes from Wikidata. */
+function oscHistDetails(o, note){ return `<details class="awd"><summary>🏆 Oscars: ${esc(note||oscHistTxt(o))}</summary><ul class="awl">${o.list.map(l=>`<li><span class="awr ${l.won?"winner":"nominee"}">${l.won?"Won":"Nominated"}</span> ${esc(l.c)}${l.who&&l.who.length?` <span class="awp">${esc(l.who.join(", "))}</span>`:""}</li>`).join("")}</ul><div class="awp" style="font-size:.76rem">Oscar history from Wikidata; a Best Song nomination may be missing.</div></details>`; }
 
 /* The awards page: what's announced next, and every contender grouped by where you can see it. */
 let awView="all";
@@ -1252,7 +1253,7 @@ function people(list){return list.map(([n,u])=>u?`<a href="${url(u)}" target="_b
 function filmBlock(mid, groups){
   const m=DATA.movies[mid];
   const facts=[esc(m.r) + (m.fr && m.fr!==m.r ? ` (Fandango: ${esc(m.fr)})`:""), m.rt?`<b class="rtm">${Math.floor(m.rt/60)}h ${pad(m.rt%60)}m</b>`:"Runtime not announced", m.anim===true?"Animated":(m.anim===false && !gLabel(m,"m"))?"Live action":null, gLabel(m,"m")||null].filter(Boolean).map(x=>`<span class="nb">${x}</span>`).join(" · ");
-  const badges=(m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:oscHist(m)?oscHistDetails(oscHist(m)):"")+(awOf(m.t,m.y)?awDetails(awOf(m.t,m.y)):"");
+  const badges=(oscHist(m)?oscHistDetails(oscHist(m), m.osc):m.osc?`<span class="badge">🏆 Oscars: ${esc(m.osc)}</span>`:"")+(awOf(m.t,m.y)?awDetails(awOf(m.t,m.y)):"");
   const mc = m.mc!=null ? `<a class="sc ${scoreClass(m.mc)}" href="https://www.metacritic.com/movie/${encodeURIComponent(m.mcS||"")}/" target="_blank" rel="noopener">${m.mc}<small>Metacritic</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Metacritic</small></span>`;
   const cs = m.csm!=null ? `<a class="sc age" href="https://www.commonsensemedia.org/movie-reviews/${encodeURIComponent(m.csmS||"")}" target="_blank" rel="noopener">${m.csm}+<small>Ages</small></a>` : `<span class="sc na">${m.y&&m.y<THIS_YEAR?"N/A":"TBA"}<small>Ages</small></span>`;
   const timeLines=groups.map(([tid,rs])=>{
