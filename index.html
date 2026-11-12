@@ -685,7 +685,10 @@ function filterSummary(){
   return parts.join(" · ");
 }
 
-function render(){
+/* Keep the address bar's ?tab= in step with the open tab (Showtimes needs none). */
+function syncTabParam(){ try{ const u=new URLSearchParams(location.search), want=(!S.focus && S.mode!=="show")?S.mode:null;
+  if((u.get("tab")||null)!==want){ want?u.set("tab",want):u.delete("tab"); history.replaceState(null,"",location.pathname+(u.toString()?"?"+u:"")+location.hash); } }catch(e){} }
+function render(){ syncTabParam();
   if(!S.day || S.day<todayStr()) S.day = defaultDay();
   for(const b of document.querySelectorAll(".tabs button")) b.setAttribute("aria-selected", b.dataset.mode===S.mode);
   $("days").hidden = S.mode!=="show" || !!S.focus;
@@ -1168,7 +1171,7 @@ function renderMyList(){
   let html=`<div class="mlhead">`, linkBox="";
   if(!keys.length) html+=addForm()+`<div class="mlempty"><b>Nothing here yet.</b> Tap the <span class="star demo">☆</span> next to any movie on Showtimes, Specials or Coming soon to add it, or use the form above for one that isn't listed yet. Your list sorts itself by release date, and you can rank it by how much you're looking forward to each one.</div>`;
   else {
-    linkBox= LIST_ID ? `<div class="mllink"><div><b>Your private list link</b> Bookmark it or text it to yourself to open this list on any device. Anyone with the link can see and change the list.</div><button class="pill" data-copylist>Copy my list link</button></div>`
+    linkBox= LIST_ID ? `<div class="mllink"><div><b>Your list on another device</b> This phone or computer remembers your list; to get back to it, bookmark this page while you're on My list. To open the list on another device, copy this private link and open it there. Anyone with the link can see and change the list.</div><button class="pill" data-copylist>Copy my list link</button></div>`
                    : `<div class="mllink"><div>Saving your list…</div></div>`;
     const dated=items.filter(i=>i.d && !i.lbl && !i.now && !i.seen && i.d>=todayStr());
     html+=`<div class="mltabs" role="group" aria-label="List view">${[["date","By date"],["hype","Most anticipated"],["after","After seeing"]].map(([v,l])=>`<button class="pill" data-lview="${v}" aria-pressed="${view===v}">${l}</button>`).join("")}</div>`;
@@ -1472,7 +1475,10 @@ async function boot(){
   DAYS = [...new Set(DATA.shows.map(s=>s[1]))].sort();
   if(!DAYS.length){ $("out").innerHTML=`<div class="empty">No showtimes loaded yet. The next refresh will fill them in.</div>`; return; }
 load();
-{ const pm=new URLSearchParams(location.search).get("movie"); if(pm && DATA.movies[pm]) S.focus=pm; }
+{ const q=new URLSearchParams(location.search), pm=q.get("movie"), tb=q.get("tab");
+  /* ?tab=list (or spec, soon) opens that tab, so a bookmark of My list lands on it. It carries no list id, so it is safe to bookmark or share. */
+  if(["spec","soon","list"].includes(tb) && !S.focus) S.mode=tb;
+  if(pm && DATA.movies[pm]) S.focus=pm; }
 for(const b of document.querySelectorAll(".tabs button")) b.onclick=()=>{S.mode=b.dataset.mode;S.focus=null;render();window.scrollTo({top:0});};
 const setPanel=open=>{$("panel").hidden=!open;$("fbtn").setAttribute("aria-expanded",open);};
 $("fbtn").onclick=()=>setPanel($("panel").hidden);
