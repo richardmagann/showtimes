@@ -14,6 +14,7 @@ CITIES = {
     "dallas": ("the Fife family", "Dallas"),
     "lexington": ("the Mulholland family", "Lexington"),
     "austin": ("Ryan Winkler", "Austin"),
+    "chicago": ("Omar", "Chicago"),
 }
 
 root = pathlib.Path(__file__).parent
