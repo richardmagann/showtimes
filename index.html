@@ -478,7 +478,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 <div class="count" id="count"></div>
 <main id="out"></main>
 
-<div class="addcity"><div><b>Want this for your city?</b><span>Pick your favorite theaters and get your own family page.</span></div><button class="done" id="reqbtn2">Request your city</button></div>
+<div class="addcity"><div><b>Want your own page?</b><span>Your favorite theaters, in your order, with the ratings your family watches. Free, for anywhere in the U.S.</span></div><button class="done" id="reqbtn2">Get your own page</button></div>
 <div class="foot">
   <div class="copyright"><strong>Rich's One-Stop Showtimes</strong> was created by Richard Magann. © 2026 Richard Magann. All rights reserved.</div>
   <div><strong>Where this comes from.</strong> Showtimes and ratings: <a href="https://www.fandango.com">Fandango</a>. Scores: <a href="https://www.metacritic.com">Metacritic</a>. Age guides: <a href="https://www.commonsensemedia.org">Common Sense Media</a>. Cast and crew: Wikipedia. Trailers: YouTube. Posters, release dates, where to watch at home and trailer links: <a href="https://www.themoviedb.org">TMDB</a>, with streaming data from <a href="https://www.justwatch.com">JustWatch</a>. This product uses the TMDB API but is not endorsed or certified by TMDB. Upcoming release dates: <a href="https://www.the-numbers.com/movies/release-schedule">The Numbers</a>. The Calendar also draws on Fathom Events, Studio Ghibli Fest, the Met Opera and local theater calendars.</div>
@@ -491,7 +491,7 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
 
 <div class="modal-bg" id="reqmodal" hidden>
   <form class="modal" id="reqform" novalidate role="dialog" aria-modal="true" aria-labelledby="rq-title">
-    <h2 id="rq-title">Request your city</h2>
+    <h2 id="rq-title">Get your own page</h2>
     <p class="lead">Give us your zip and we'll set up your own page and send you the link.</p>
     <div class="preview" aria-live="polite">Rich's <span>One-Stop Showtimes</span><small>Created by Richard Magann for <b id="pvfam">you</b></small></div>
     <label for="rq-fam">Who is this page for? <small>Shown under the title. A family, like "the Fife family," or just a name, like "Sam."</small><input id="rq-fam" maxlength="40" required autocomplete="off" placeholder="the Fife family"></label>
@@ -1338,7 +1338,7 @@ const TOUR=[
   {sel:"#out .film", title:"Reading a movie", text:"<b>Metacritic</b> is the average grade of all critics' reviews, out of 100; green means 70 or higher. <b>Ages</b> is Common Sense Media's age guide. Next to each start time, we show about when the movie ends, so you can plan the rest of your day. <b>▶ Trailer</b> opens the trailer on YouTube. Tap a title to see every showtime for just that movie, today and on the days ahead. Genre words like <i>Adventure · Comedy</i> sit next to the runtime. Tap the <b>☆</b> to save it to My list."},
   {sel:"#out .strip", title:"Don't miss these", text:"Special and classic showings are flagged in red and gathered at the top of each day. Tap one to see all its showtimes."},
   {sel:"#relkinds", sel2:"#tab-soon", mode:"soon", title:"Coming soon: choose what to see", text:"You're now on the <b>Coming soon</b> tab, which looks ahead at future dates. Tap a movie to see what it's about, its rating and cast. Tap the <b>☆</b> next to any movie to add it to <b>★ My list</b> (the last tab), your own release calendar that you can rank and add to your phone's calendar. The ☆ works on Showtimes and Specials too. Tap a chip to turn a group on or off. <b>Special events</b> are one- or two-night screenings at your theaters, like anniversaries and concerts. <b>Wide release</b> means new movies opening in theaters everywhere. <b>Arthouse &amp; awards</b> are smaller films from the studios behind most Oscar contenders; they open in a few cities first. That one and <b>Other limited</b> start switched off."},
-  {sel:"#tourbtn", title:"Want this for your city?", text:"Request your own page, set up with your favorite theaters and ratings. Fill out a short form and Richard will make it happen!<br><br>Tap ? any time to see this tour again.", cta:true}
+  {sel:"#tourbtn", title:"Want your own page?", text:"Anyone can have a page of their own, in this city or any other: your favorite theaters in your order, and the ratings your family watches. Fill out a short form and Richard will set it up!<br><br>Tap ? any time to see this tour again.", cta:true}
 ];
 /* Shown once to people who already took the tour, so they find what was added since. */
 const NEW_KEY="mfs-new-nov26", NEW2_KEY="mfs-new-awards27";
@@ -1376,7 +1376,7 @@ function showTourStep(i){
   const inBar=!el||el.closest(".bar")||el.closest("header");
   if(!inBar){ el.scrollIntoView({block:"center"}); } else { window.scrollTo({top:0}); }
   const card=tourEls[1];
-  card.innerHTML=`<h3>${st.title}</h3><p>${st.text}</p>${st.cta?`<button type="button" class="tour-cta" data-t="req">Request your city</button>`:""}<div class="tour-nav"><span class="dots">${tourI+1} of ${steps.length}</span><span class="btns">${tourI<steps.length-1?`<button type="button" data-t="skip">Skip</button>`:""}${tourI>0?`<button type="button" data-t="back">Back</button>`:""}<button type="button" class="primary" data-t="next">${st.next||(tourI<steps.length-1?"Next":"Done")}</button></span></div>`;
+  card.innerHTML=`<h3>${st.title}</h3><p>${st.text}</p>${st.cta?`<button type="button" class="tour-cta" data-t="req">Get your own page</button>`:""}<div class="tour-nav"><span class="dots">${tourI+1} of ${steps.length}</span><span class="btns">${tourI<steps.length-1?`<button type="button" data-t="skip">Skip</button>`:""}${tourI>0?`<button type="button" data-t="back">Back</button>`:""}<button type="button" class="primary" data-t="next">${st.next||(tourI<steps.length-1?"Next":"Done")}</button></span></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(placeTour));
   card.querySelector('[data-t="next"]').focus({preventScroll:true});
 }
@@ -1476,7 +1476,7 @@ async function boot(){
   const loadedOn=todayStr();
   document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible" && todayStr()!==loadedOn) location.reload(); });
   try{ DATA=await fetchData(); await loadList(); }
-  catch(err){ const setup=/No theaters/.test(err.message); $("out").innerHTML=`<div class="empty">${setup?`This city isn't set up yet. <button class="done" id="reqbtn3">Request your city</button>`:"Couldn't load showtimes ("+esc(err.message)+"). Check your connection and reload."}</div>`; if(setup){ $("madefor").textContent=""; $("reqbtn3").onclick=openReq; } return; }
+  catch(err){ const setup=/No theaters/.test(err.message); $("out").innerHTML=`<div class="empty">${setup?`This city isn't set up yet. <button class="done" id="reqbtn3">Get your own page</button>`:"Couldn't load showtimes ("+esc(err.message)+"). Check your connection and reload."}</div>`; if(setup){ $("madefor").textContent=""; $("reqbtn3").onclick=openReq; } return; }
   $("madefor").textContent = DATA.madeFor ? " for "+DATA.madeFor : "";
   FAV_ORDER = Object.entries(DATA.theaters).sort((a,b)=>((a[1].rank??99)-(b[1].rank??99))||(a[1].mi-b[1].mi)).map(e=>e[0]);
   DAYS = [...new Set(DATA.shows.map(s=>s[1]))].sort();
@@ -1510,7 +1510,10 @@ $("clearbtn").onclick=clearFilters; $("clearbtn2").onclick=clearFilters;
 $("out").addEventListener("click",e=>{ if(e.target.closest("[data-clear]")) clearFilters(); });
 $("count").addEventListener("click",e=>{ if(e.target.closest("[data-shownr]")){ S.showNR=true; render(); } });
 let who=null; try{ who=sessionStorage.getItem("mfs-who-"+CITY); }catch(e){}
-if(who==="family"||who==="grown"){ setWho(who); render(); maybeTour(); }
+/* ?request (the "get your own page" link) opens the form straight away, with no tour or who's-watching question. */
+if(new URLSearchParams(location.search).has("request")){ if(!(who==="family"||who==="grown")) who="family"; setWho(who); render(); openReq();
+  { const u=new URLSearchParams(location.search); u.delete("request"); history.replaceState(null,"",location.pathname+(u.toString()?"?"+u:"")); } }
+else if(who==="family"||who==="grown"){ setWho(who); render(); maybeTour(); }
 else { setWho("family"); render(); askWho(); }
 }
 // Asked each time the site is opened (once per browser session), so a shared phone lands in the right mode.

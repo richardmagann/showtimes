@@ -4,7 +4,8 @@ show who the page was made for and their city. Previews read the static <title>/
 JavaScript, so ?city=... alone can't change them.
 
 index.html is the single source. Edit it, then run:  python3 build_cities.py
-To add a family, add a line to CITIES (id must match cities.id in Supabase).
+To add a family, add a line to CITIES (id must match cities.id in Supabase). The id is just the page's address,
+so it need not be a city: two families in one city get two ids (e.g. "okc-smith"), each with its own theaters and ranks.
 """
 import pathlib
 
