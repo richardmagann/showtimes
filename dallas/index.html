@@ -505,7 +505,8 @@ button.pt .mi{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nu
       <button type="button" class="linkbtn" id="rq-clear" hidden>Clear picks</button>
     </div>
     <label for="rq-other">Theaters we missed <small>Optional. Indie theaters, museum film series, anything not in the list.</small><textarea id="rq-other" maxlength="500"></textarea></label>
-    <fieldset class="rqrates"><legend>What counts as Family Mode for you? <small>Most families pick G and PG. Grown-Up Mode always shows everything.</small></legend>
+    <label class="fam13"><input type="checkbox" id="rq-adults"> No kids here: skip Family mode and always show all ratings</label>
+    <fieldset class="rqrates" id="rq-ratesbox"><legend>What counts as Family Mode for you? <small>Most families pick G and PG. Grown-Up Mode always shows everything.</small></legend>
       <div class="chips" id="rq-rates"><button type="button" class="pill" aria-pressed="true" data-r="G">G</button><button type="button" class="pill" aria-pressed="true" data-r="PG">PG</button><button type="button" class="pill" aria-pressed="false" data-r="PG-13">PG-13</button><button type="button" class="pill" aria-pressed="false" data-r="R">R</button><button type="button" class="pill" aria-pressed="false" data-r="NR">NR</button></div>
     </fieldset>
     <label for="rq-home">Nearest cross streets <small>Optional. Two street names with "&amp;" between them, like the example. Used only to work out miles to each theater; never shown.</small><input id="rq-home" maxlength="120" placeholder="N May Ave &amp; W Memorial Rd" autocomplete="off"></label>
@@ -537,7 +538,7 @@ async function sb(path, all=false){
 const AW_SEASON=(d=>d.getMonth()>=3?d.getFullYear()+1:d.getFullYear())(new Date());
 async function fetchData(){
   const ymd=(d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"))(new Date());
-  const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name,default_ratings,made_for`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
+  const [city, ct]=await Promise.all([sb(`cities?id=eq.${CITY}&select=name,family_name,default_ratings,made_for,audience`), sb(`city_theaters?city_id=eq.${CITY}&select=rank,miles,theaters(id,name,short_name,is_indie)`)]);
   if(!ct.length) throw new Error(`No theaters set up for "${CITY}"`);
   const ids=ct.map(r=>r.theaters.id);
   const [shows, events, log, rels, dets, finfo, tmdb, awr, awdt] = await Promise.all([
@@ -554,7 +555,7 @@ async function fetchData(){
   const mids=[...new Set(shows.map(s=>s.movie_id))];
   const movies=[];
   for(let i=0;i<mids.length;i+=150) movies.push(...await sb(`movies?select=*&id=in.(${mids.slice(i,i+150).join(",")})`));
-  const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,madeFor:city[0]?.made_for||null,defaultRatings:city[0]?.default_ratings||["G","PG"],cityName:city[0]?.name||null};
+  const D={theaters:{},movies:{},shows:[],calendar:[],updated:log[0]?.finished_at||null,family:city[0]?.family_name||null,madeFor:city[0]?.made_for||null,defaultRatings:city[0]?.default_ratings||["G","PG"],cityName:city[0]?.name||null,adults:city[0]?.audience==="adults"};
   for(const r of ct){const t=r.theaters; D.theaters[t.id]={name:t.name,short:t.short_name,rank:r.rank,mi:Number(r.miles),indie:t.is_indie};}
   /* UFC fight broadcasts are left off the site entirely (showtimes, special events and the release calendar). */
   const DROP=/\bUFC\b/i;
@@ -584,7 +585,7 @@ const $=id=>document.getElementById(id);
 
 const PREF_KEY="mfs2-"+CITY;
 /* A household can count PG-13 as Family on this phone. It is a who-we-are setting, not a narrowing filter, so it is remembered. */
-const FAM13_KEY="mfs-fam13-"+CITY;
+const FAM13_KEY="mfs-fam13-"+CITY, WHO_KEEP="mfs-whokeep-"+CITY;
 /* Theaters folded shut in the By theater view; remembered on this device. Tap the name again to open. */
 const COLL_KEY="mfs-coll-"+CITY;
 const COLL=new Set((()=>{ try{ return JSON.parse(localStorage.getItem(COLL_KEY)||"[]"); }catch(e){ return []; } })().map(String));
@@ -1355,7 +1356,7 @@ const WHATSNEW=[
 let tourEls=null, tourI=0;
 function tourKey(){ return "mfs-tour-v6"; }
 let tourList=null; // fixed when the tour starts, so switching tabs mid-tour doesn't renumber the steps
-function tourSteps(){ return tourList || TOUR.filter(s=>s.center || s.mode || document.querySelector(s.sel)); }
+function tourSteps(){ return tourList || TOUR.filter(s=>s.center || s.mode || (()=>{ const el=document.querySelector(s.sel); return el && !el.closest("[hidden]"); })()); }
 function endTour(){ if(!tourEls) return; tourEls.forEach(e=>e.remove()); tourEls=null; tourList=null; if(S.mode!=="show"){ S.mode="show"; render(); window.scrollTo({top:0}); } window.removeEventListener("resize",placeTour); window.removeEventListener("scroll",placeTour,true); try{localStorage.setItem(tourKey(),"1"); localStorage.setItem(NEW_KEY,"1"); localStorage.setItem(NEW2_KEY,"1");}catch(e){} }
 function placeTour(){
   if(!tourEls) return;
@@ -1385,7 +1386,7 @@ function startTour(custom){
   if(tourEls) endTour();
   if(S.mode!=="show"||S.focus){ S.mode="show"; S.focus=null; render(); }
   $("panel").hidden=true; $("fbtn").setAttribute("aria-expanded",false);
-  tourList=null; tourList=Array.isArray(custom)?custom.filter(s=>s.center||document.querySelector(s.sel)):tourSteps();
+  tourList=null; tourList=Array.isArray(custom)?custom.filter(s=>s.center||(document.querySelector(s.sel)&&!document.querySelector(s.sel).closest("[hidden]"))):tourSteps();
   const block=document.createElement("div"); block.className="tour-block";
   const ring=document.createElement("div"); ring.className="tour-ring";
   const card=document.createElement("div"); card.className="tour-card"; card.setAttribute("role","dialog"); card.setAttribute("aria-label","How this works");
@@ -1443,6 +1444,7 @@ function setupReq(){
   $("rq-clear").onclick=()=>{picks=[];drawPicker();};
   $("reqform").getPicks=()=>picks.map(id=>{const t=found.find(x=>x.id===id); return {id, name:t?.name, miles:t?.miles};});
   $("reqform").getCity=()=>{ const a=found[0]?.address||""; const m=a.match(/,\s*([^,]+),\s*([A-Z]{2})\s*\d{5}/); return m? `${m[1]}, ${m[2]}` : null; };
+  $("rq-adults").addEventListener("change",()=>{ $("rq-ratesbox").hidden=$("rq-adults").checked; });
   $("rq-rates").addEventListener("click",e=>{const b=e.target.closest("[data-r]"); if(!b) return; b.setAttribute("aria-pressed", b.getAttribute("aria-pressed")!=="true");});
   $("rq-fam").addEventListener("input",()=>{ $("pvfam").textContent=$("rq-fam").value.trim()||"you"; });
   $("reqform").addEventListener("submit",async e=>{
@@ -1457,7 +1459,7 @@ function setupReq(){
     $("rq-send").disabled=true; $("rq-send").textContent="Sending…";
     try{
       const r=await fetch(SB_URL+"city_requests",{method:"POST",headers:{apikey:SB_KEY,Authorization:"Bearer "+SB_KEY,"Content-Type":"application/json",Prefer:"return=minimal"},
-        body:JSON.stringify({family_name:v("rq-fam"),contact:v("rq-contact"),city:$("reqform").getCity(),zip:v("rq-zip"),favorite_ids:$("reqform").getPicks(),favorite_theaters:null,other_theaters:v("rq-other")||null,home_hint:v("rq-home")||null,notes:v("rq-notes")||null,default_ratings:rates})});
+        body:JSON.stringify({family_name:v("rq-fam"),contact:v("rq-contact"),city:$("reqform").getCity(),zip:v("rq-zip"),favorite_ids:$("reqform").getPicks(),favorite_theaters:null,other_theaters:v("rq-other")||null,home_hint:v("rq-home")||null,audience:$("rq-adults").checked?"adults":"family",notes:v("rq-notes")||null,default_ratings:rates})});
       if(!r.ok) throw new Error(r.status);
       $("reqform").innerHTML=`<h2>Request sent</h2><p class="lead">A page for <b>${esc(v("rq-fam")||"you")}</b> is on the list. We'll set up your theaters and send the link to the contact you gave.</p><div class="acts"><button type="button" class="primary" id="rq-close">Close</button></div>`;
       $("rq-close").onclick=closeReq;
@@ -1503,21 +1505,24 @@ for(const id of ["osc","keepsp","hidepast"]) $(id).checked=S[id];
 bind("mc","mc",Number); bind("age","age",Number); bind("th","th",String); bind("after","after",Number);
 bind("osc","osc"); bind("keepsp","keepsp"); bind("hidepast","hidepast");
 if(DATA.updated){ const u=new Date(DATA.updated); $("fresh").textContent=`Updated ${u.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}, ${u.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})} · through ${dayLabel(DAYS[DAYS.length-1]).w} ${dayLabel(DAYS[DAYS.length-1]).md}`; }
-$("who").addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); render();
+$("who").addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); try{ if(localStorage.getItem(WHO_KEEP)) localStorage.setItem(WHO_KEEP, b.dataset.who); }catch(err){} render();
   /* Tapping the ratings under Family opens Filters at the PG-13 checkbox. */
   if(e.target.closest("small") && b.dataset.who==="family" && !$("fam13p").hidden){ setPanel(true); const f=$("fam13p"); f.classList.remove("flash"); void f.offsetWidth; f.classList.add("flash"); f.scrollIntoView({block:"center",behavior:"smooth"}); }});
 $("fam13c").onchange=e=>{ setFam13(e.target.checked); if(S.who!=="grown") setWho("family"); render(); };
 $("clearbtn").onclick=clearFilters; $("clearbtn2").onclick=clearFilters;
 $("out").addEventListener("click",e=>{ if(e.target.closest("[data-clear]")) clearFilters(); });
 $("count").addEventListener("click",e=>{ if(e.target.closest("[data-shownr]")){ S.showNR=true; render(); } });
-let who=null; try{ who=sessionStorage.getItem("mfs-who-"+CITY); }catch(e){}
+let who=null; try{ who=sessionStorage.getItem("mfs-who-"+CITY)||localStorage.getItem(WHO_KEEP); }catch(e){}
+/* A grown-ups-only page (cities.audience = 'adults') never asks and has no Family switch. */
+if(DATA.adults){ who="grown"; const w=$("who"); if(w) w.hidden=true; }
 /* ?request (the "get your own page" link) opens the form straight away, with no tour or who's-watching question. */
 if(new URLSearchParams(location.search).has("request")){ if(!(who==="family"||who==="grown")) who="family"; setWho(who); render(); openReq();
   { const u=new URLSearchParams(location.search); u.delete("request"); history.replaceState(null,"",location.pathname+(u.toString()?"?"+u:"")); } }
 else if(who==="family"||who==="grown"){ setWho(who); render(); maybeTour(); }
 else { setWho("family"); render(); askWho(); }
 }
-// Asked each time the site is opened (once per browser session), so a shared phone lands in the right mode.
+// Asked each time the site is opened (once per browser session), so a shared phone lands in the right mode,
+// unless "Don't ask again on this device" was checked (then the last choice is kept in WHO_KEEP).
 function askWho(){
   const famTxt=()=>{ const r=famRatings(); return r.length>1 ? r.slice(0,-1).join(", ")+" and "+r[r.length-1] : r.join(""); };
   const can13=!DATA.defaultRatings.includes("PG-13");
@@ -1526,9 +1531,12 @@ function askWho(){
     <div class="choices"><button type="button" data-who="family"><b>Family</b><small id="famtxt">${esc(famTxt())}, plus family-friendly unrated films</small></button>
     <button type="button" data-who="grown"><b>Grown-ups</b><small>Everything, all ratings</small></button></div>
     ${can13?`<label class="fam13 inask"><input type="checkbox" id="fam13" ${fam13()?"checked":""}><span>Our family also watches PG-13<small>Remembered on this phone</small></span></label>`:""}
+    <label class="fam13 inask"><input type="checkbox" id="whokeep"><span>Don't ask again on this device<small>Switch any time with the buttons at the top</small></span></label>
     <div class="by">Either way, <b>Filters</b> can narrow by genre, critics' score, Common Sense age, theater and start time. You can switch between Family and Grown-ups any time at the top of the page.</div></div>`;
   bg.addEventListener("change",e=>{ if(e.target.id==="fam13"){ setFam13(e.target.checked); const t=bg.querySelector("#famtxt"); if(t) t.textContent=famTxt()+", plus family-friendly unrated films"; } });
-  bg.addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who); bg.remove(); render(); maybeTour();});
+  bg.addEventListener("click",e=>{const b=e.target.closest("[data-who]"); if(!b) return; setWho(b.dataset.who);
+    try{ if(bg.querySelector("#whokeep").checked) localStorage.setItem(WHO_KEEP, b.dataset.who); }catch(err){}
+    bg.remove(); render(); maybeTour();});
   document.body.appendChild(bg); bg.querySelector("button").focus();
 }
 boot();
